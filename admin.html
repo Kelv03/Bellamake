@@ -4,44 +4,268 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel Admin - Bella Make</title>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f9; margin: 0; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        h1, h2 { color: #d63384; text-align: center; }
+        .escondido { display: none; }
+        input, select, button { width: 100%; padding: 10px; margin: 5px 0 15px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+        button { background-color: #d63384; color: white; border: none; cursor: pointer; font-weight: bold; }
+        button:hover { background-color: #c02673; }
+        .btn-pequeno { width: auto; padding: 5px 10px; margin: 2px; font-size: 12px; }
+        .btn-vermelho { background-color: #dc3545; } .btn-vermelho:hover { background-color: #c82333; }
+        .btn-amarelo { background-color: #ffc107; color: black; } .btn-amarelo:hover { background-color: #e0a800; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        th { background-color: #f8f9fa; }
+        img.thumb { width: 50px; height: 50px; object-fit: cover; border-radius: 5px; }
+        .grid-duas-colunas { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .busca-container { display: flex; gap: 10px; margin-bottom: 20px; }
+        .busca-container input { margin: 0; }
+    </style>
 </head>
 <body>
-    <header>
-        <h1>Painel de Gestão</h1>
-        <a href="index.html" style="color: white; text-decoration: underline; font-size: 14px;">Voltar para a Loja</a>
-    </header>
 
-    <main class="admin-container" id="loginScreen">
-        <h2>Acesso Restrito</h2>
-        <input type="password" id="senhaAdmin" placeholder="Digite a senha">
-        <button class="btn-buy" onclick="verificarSenha()">Entrar</button>
-    </main>
+<div class="container" id="tela-login">
+    <h1>🦋 Login Lojista</h1>
+    <input type="password" id="senha" placeholder="Digite a senha">
+    <button onclick="fazerLogin()">Entrar no Painel</button>
+</div>
 
-    <main class="admin-container" id="adminPanel" style="display: none;">
-        <h2>Adicionar Novo Produto</h2>
-        <form id="formProduto" onsubmit="salvarProduto(event)">
-            <input type="text" id="nomeProd" placeholder="Nome do Produto (ex: Base Matte)" required>
-            <input type="number" id="precoProd" placeholder="Preço (ex: 45.90)" step="0.01" required>
-            
-            <select id="catProd" required>
-                <option value="">Selecione a Categoria...</option>
-                <option value="Rosto">Rosto</option>
-                <option value="Olhos">Olhos</option>
-                <option value="Boca">Boca</option>
-                <option value="Sobrancelha">Sobrancelha</option>
-                <option value="Acessórios">Acessórios</option>
-            </select>
+<div class="container escondido" id="tela-painel">
+    <h1>🦋 Painel de Controle - Bella Make</h1>
+    <button onclick="sair()" class="btn-vermelho" style="width: auto; float: right;">Sair</button>
+    <br><br>
 
-            <input type="url" id="imgProd" placeholder="Link da Imagem (URL)" required>
-            <button type="submit" class="btn-buy">Guardar Produto no Banco</button>
-        </form>
+    <div class="grid-duas-colunas">
+        <div>
+            <h2>📦 Gerenciar Produtos</h2>
+            <input type="hidden" id="prod-id">
+            <input type="text" id="prod-nome" placeholder="Nome do Produto">
+            <input type="number" id="prod-preco" placeholder="Preço (ex: 29.90)" step="0.01">
+            <input type="text" id="prod-categoria" placeholder="Categoria (ex: Boca, Olhos)">
+            <input type="text" id="prod-imagem" placeholder="URL da Imagem">
+            <input type="number" id="prod-estoque" placeholder="Quantidade no Estoque" min="0">
+            <input type="text" id="prod-cores" placeholder="Cores (separe por vírgula. Ex: Vermelho, Rosa)">
+            <button onclick="salvarProduto()">Guardar Produto</button>
+        </div>
 
-        <h2 style="margin-top: 30px;">Produtos Cadastrados</h2>
-        <div id="listaAdmin" class="admin-list">A carregar banco de dados...</div>
-    </main>
+        <div>
+            <h2>🚚 Configurar Entregas</h2>
+            <input type="text" id="frete-cidade" placeholder="Nome da Cidade ou Retirada">
+            <input type="number" id="frete-valor" placeholder="Valor da Entrega (ex: 5.00)" step="0.01">
+            <button onclick="salvarFrete()">Adicionar Cidade</button>
 
-    <script src="script.js"></script>
+            <table id="tabela-fretes">
+                <thead><tr><th>Cidade</th><th>Valor</th><th>Ação</th></tr></thead>
+                <tbody id="lista-fretes"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <hr style="margin: 30px 0;">
+
+    <h2>Estoque Atual</h2>
+    <div class="busca-container">
+        <input type="text" id="busca-produto" placeholder="Buscar produto pelo nome..." onkeyup="buscarProdutos()">
+        <button class="btn-amarelo" style="width: 150px;" onclick="carregarProdutos()"><i class="fas fa-sync"></i> Atualizar</button>
+    </div>
+
+    <table id="tabela-produtos">
+        <thead>
+            <tr>
+                <th>Foto</th>
+                <th>Nome</th>
+                <th>Preço</th>
+                <th>Estoque</th>
+                <th>Status</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody id="lista-produtos"></tbody>
+    </table>
+</div>
+
+<script>
+    const API_URL = "https://bellamake.onrender.com";
+    let produtosGlobal = [];
+
+    // --- LOGIN ---
+    async function fazerLogin() {
+        const senha = document.getElementById('senha').value;
+        const resp = await fetch(`${API_URL}/login`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({senha})
+        });
+        const data = await resp.json();
+        if(data.sucesso) {
+            document.getElementById('tela-login').classList.add('escondido');
+            document.getElementById('tela-painel').classList.remove('escondido');
+            carregarProdutos();
+            carregarFretes();
+        } else {
+            alert('Senha incorreta!');
+        }
+    }
+
+    function sair() {
+        document.getElementById('tela-painel').classList.add('escondido');
+        document.getElementById('tela-login').classList.remove('escondido');
+        document.getElementById('senha').value = '';
+    }
+
+    // --- PRODUTOS ---
+    async function carregarProdutos() {
+        const resp = await fetch(`${API_URL}/produtos`);
+        produtosGlobal = await resp.json();
+        renderizarTabelaProdutos(produtosGlobal);
+    }
+
+    function renderizarTabelaProdutos(lista) {
+        const tbody = document.getElementById('lista-produtos');
+        tbody.innerHTML = '';
+        lista.forEach(p => {
+            const corStatus = p.ativo ? 'green' : 'red';
+            const textoStatus = p.ativo ? 'Ativo' : 'Inativo';
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><img src="${p.imagem}" class="thumb" onerror="this.src='https://via.placeholder.com/50'"></td>
+                <td>${p.nome}</td>
+                <td>R$ ${parseFloat(p.preco).toFixed(2)}</td>
+                <td><b>${p.estoque}</b></td>
+                <td style="color: ${corStatus}; font-weight: bold;">${textoStatus}</td>
+                <td>
+                    <button class="btn-pequeno btn-amarelo" onclick="editarProduto('${p._id}')"><i class="fas fa-pen"></i></button>
+                    <button class="btn-pequeno" onclick="toggleAtivo('${p._id}', ${p.ativo})"><i class="fas fa-eye-slash"></i></button>
+                    <button class="btn-pequeno btn-vermelho" onclick="apagarProduto('${p._id}')"><i class="fas fa-trash"></i></button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function buscarProdutos() {
+        const termo = document.getElementById('busca-produto').value.toLowerCase();
+        const filtrados = produtosGlobal.filter(p => p.nome.toLowerCase().includes(termo));
+        renderizarTabelaProdutos(filtrados);
+    }
+
+    async function salvarProduto() {
+        const id = document.getElementById('prod-id').value;
+        const coresRaw = document.getElementById('prod-cores').value;
+        // Transforma o texto "Vermelho, Rosa" em uma lista real de palavras
+        const coresList = coresRaw ? coresRaw.split(',').map(c => c.trim()) : [];
+
+        const produto = {
+            nome: document.getElementById('prod-nome').value,
+            preco: document.getElementById('prod-preco').value,
+            categoria: document.getElementById('prod-categoria').value,
+            imagem: document.getElementById('prod-imagem').value,
+            estoque: document.getElementById('prod-estoque').value,
+            cores: coresList
+        };
+
+        let url = `${API_URL}/produtos`;
+        let metodo = 'POST';
+
+        // Se tem ID, é uma atualização (PUT)
+        if (id) {
+            url = `${API_URL}/produtos/${id}`;
+            metodo = 'PUT';
+        } else {
+            produto.ativo = true; // Novos produtos começam ativos
+        }
+
+        await fetch(url, {
+            method: metodo,
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(produto)
+        });
+
+        alert('Produto salvo com sucesso!');
+        limparFormularioProduto();
+        carregarProdutos();
+    }
+
+    function editarProduto(id) {
+        const p = produtosGlobal.find(x => x._id === id);
+        if(!p) return;
+        document.getElementById('prod-id').value = p._id;
+        document.getElementById('prod-nome').value = p.nome;
+        document.getElementById('prod-preco').value = p.preco;
+        document.getElementById('prod-categoria').value = p.categoria;
+        document.getElementById('prod-imagem').value = p.imagem;
+        document.getElementById('prod-estoque').value = p.estoque || 0;
+        document.getElementById('prod-cores').value = p.cores ? p.cores.join(', ') : '';
+        window.scrollTo(0, 0); // Sobe a tela para o formulário
+    }
+
+    async function toggleAtivo(id, statusAtual) {
+        await fetch(`${API_URL}/produtos/${id}`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ ativo: !statusAtual })
+        });
+        carregarProdutos();
+    }
+
+    async function apagarProduto(id) {
+        if(confirm('Tem certeza que deseja apagar este produto?')) {
+            await fetch(`${API_URL}/produtos/${id}`, { method: 'DELETE' });
+            carregarProdutos();
+        }
+    }
+
+    function limparFormularioProduto() {
+        document.getElementById('prod-id').value = '';
+        document.getElementById('prod-nome').value = '';
+        document.getElementById('prod-preco').value = '';
+        document.getElementById('prod-categoria').value = '';
+        document.getElementById('prod-imagem').value = '';
+        document.getElementById('prod-estoque').value = '';
+        document.getElementById('prod-cores').value = '';
+    }
+
+    // --- FRETES ---
+    async function carregarFretes() {
+        const resp = await fetch(`${API_URL}/fretes`);
+        const fretes = await resp.json();
+        const tbody = document.getElementById('lista-fretes');
+        tbody.innerHTML = '';
+        fretes.forEach(f => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${f.cidade}</td>
+                <td>R$ ${parseFloat(f.valor).toFixed(2)}</td>
+                <td><button class="btn-pequeno btn-vermelho" onclick="apagarFrete('${f._id}')"><i class="fas fa-trash"></i></button></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    async function salvarFrete() {
+        const cidade = document.getElementById('frete-cidade').value;
+        const valor = document.getElementById('frete-valor').value;
+        if(!cidade || !valor) return alert("Preencha a cidade e o valor.");
+
+        await fetch(`${API_URL}/fretes`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({cidade, valor})
+        });
+        document.getElementById('frete-cidade').value = '';
+        document.getElementById('frete-valor').value = '';
+        carregarFretes();
+    }
+
+    async function apagarFrete(id) {
+        if(confirm('Apagar esta opção de entrega?')) {
+            await fetch(`${API_URL}/fretes/${id}`, { method: 'DELETE' });
+            carregarFretes();
+        }
+    }
+</script>
 </body>
 </html>
