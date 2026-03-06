@@ -1,12 +1,13 @@
 const API_URL = "https://bellamake.onrender.com";
-const NUMERO_WHATSAPP = "5500000000000"; // COLOQUE O NÚMERO DELA AQUI!
+const NUMERO_WHATSAPP = "+558781790842"; // COLOQUE O NÚMERO AQUI
 
 let produtosVitrine = [];
 let carrinho = [];
 let fretesDisponiveis = [];
 let produtoSelecionado = null;
+let categoriaAtual = 'Todos';
 
-// Quando a página carrega, busca os produtos e fretes do banco
+// Quando a página carrega
 window.onload = async () => {
     await carregarProdutos();
     await carregarFretes();
@@ -16,32 +17,58 @@ async function carregarProdutos() {
     const resp = await fetch(`${API_URL}/produtos`);
     const todos = await resp.json();
     
-    // Mostra apenas produtos que o Admin deixou ATIVO e que tenham ESTOQUE
+    // Puxa só os que estão ativos e com estoque
     produtosVitrine = todos.filter(p => p.ativo === true && p.estoque > 0);
-    
-    const vitrine = document.getElementById('vitrine');
-    vitrine.innerHTML = '';
-    
-    if(produtosVitrine.length === 0) {
-        vitrine.innerHTML = '<h3 style="width: 100%; text-align: center; color: #888;">Nenhum produto disponível no momento.</h3>';
-        return;
-    }
-
-    produtosVitrine.forEach(p => {
-        vitrine.innerHTML += `
-            <div class="produto-card" onclick="abrirProduto('${p._id}')">
-                <img src="${p.imagem}" onerror="this.src='https://via.placeholder.com/200'">
-                <h3 style="margin: 10px 0 5px;">${p.nome}</h3>
-                <p class="preco">R$ ${parseFloat(p.preco).toFixed(2)}</p>
-                <button class="btn-rosa" style="margin-top:0;">Ver Detalhes</button>
-            </div>
-        `;
-    });
+    aplicarFiltros();
 }
 
 async function carregarFretes() {
     const resp = await fetch(`${API_URL}/fretes`);
     fretesDisponiveis = await resp.json();
+}
+
+// ---- LÓGICA DE FILTROS (BARRA DE BUSCA E BOTÕES) ----
+function filtrarCategoria(cat) {
+    categoriaAtual = cat;
+    aplicarFiltros();
+}
+
+function filtrarNaTela() {
+    aplicarFiltros();
+}
+
+function aplicarFiltros() {
+    const termo = document.getElementById('searchInput').value.toLowerCase();
+    
+    const filtrados = produtosVitrine.filter(p => {
+        const bateCategoria = categoriaAtual === 'Todos' || p.categoria.toLowerCase() === categoriaAtual.toLowerCase();
+        const bateNome = p.nome.toLowerCase().includes(termo);
+        return bateCategoria && bateNome;
+    });
+
+    renderizarGrid(filtrados);
+}
+
+function renderizarGrid(lista) {
+    const grid = document.getElementById('productGrid');
+    grid.innerHTML = '';
+    
+    if(lista.length === 0) {
+        grid.innerHTML = '<p style="text-align: center; grid-column: 1/-1;">Nenhum produto encontrado.</p>';
+        return;
+    }
+
+    lista.forEach(p => {
+        // Usando as classes do seu design
+        grid.innerHTML += `
+            <div class="produto-card" style="background: white; padding: 15px; border-radius: 10px; text-align: center; box-shadow: 0 4px 8px rgba(0,0,0,0.1); cursor: pointer;" onclick="abrirProduto('${p._id}')">
+                <img src="${p.imagem}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px;" onerror="this.src='https://via.placeholder.com/200'">
+                <h3 style="margin: 10px 0 5px;">${p.nome}</h3>
+                <p style="color: #d63384; font-size: 20px; font-weight: bold;">R$ ${parseFloat(p.preco).toFixed(2)}</p>
+                <button style="background-color: #d63384; color: white; border: none; padding: 8px; width: 100%; border-radius: 5px; cursor: pointer;">Ver Detalhes</button>
+            </div>
+        `;
+    });
 }
 
 // ---- LÓGICA DO PRODUTO (MODAL) ----
@@ -59,7 +86,6 @@ function abrirProduto(id) {
     const areaCores = document.getElementById('area-cores');
     const selectCor = document.getElementById('detalhe-cor');
     
-    // Se o produto tiver cores cadastradas pelo admin, mostra a caixa de seleção
     if (produtoSelecionado.cores && produtoSelecionado.cores.length > 0) {
         areaCores.style.display = 'block';
         selectCor.innerHTML = produtoSelecionado.cores.map(c => `<option value="${c}">${c}</option>`).join('');
@@ -109,7 +135,7 @@ function atualizarBadge() {
 function removerDoCarrinho(index) {
     carrinho.splice(index, 1);
     atualizarBadge();
-    abrirModalCarrinho(); // Recarrega a tela do carrinho
+    abrirModalCarrinho(); 
 }
 
 function abrirModalCarrinho() {
@@ -133,7 +159,6 @@ function abrirModalCarrinho() {
         });
     }
 
-    // Popula a lista de cidades e fretes
     const selectFrete = document.getElementById('select-frete');
     selectFrete.innerHTML = '<option value="">Selecione uma opção...</option>';
     fretesDisponiveis.forEach(f => {
@@ -163,7 +188,6 @@ async function finalizarCompra() {
     const freteNome = selectFrete.options[selectFrete.selectedIndex].text;
     const total = document.getElementById('carrinho-total').innerText;
 
-    // 1. Manda a lista para o Backend (Python) para dar baixa no estoque
     const resp = await fetch(`${API_URL}/comprar`, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -176,8 +200,7 @@ async function finalizarCompra() {
         return alert("Erro ao finalizar: " + data.mensagem);
     }
 
-    // 2. Monta o texto para o WhatsApp
-    let msg = `🦋 *Novo Pedido - Gaby Makes* 🦋\n\n`;
+    let msg = `🦋 *Novo Pedido - Bella Make* 🦋\n\n`;
     carrinho.forEach(item => {
         msg += `▫️ ${item.quantidade}x ${item.nome}`;
         if (item.cor) msg += ` (Cor: ${item.cor})`;
@@ -188,11 +211,10 @@ async function finalizarCompra() {
     msg += `💰 *Total a pagar: R$ ${total}*\n\n`;
     msg += `Aguardando informações para pagamento!`;
 
-    // 3. Esvazia o carrinho e abre o WhatsApp da Gaby
     carrinho = [];
     atualizarBadge();
     fecharModal('modal-carrinho');
-    carregarProdutos(); // Recarrega a vitrine para esconder produtos que ficaram sem estoque
+    carregarProdutos();
 
     const zapLink = `https://wa.me/${NUMERO_WHATSAPP}?text=${encodeURIComponent(msg)}`;
     window.open(zapLink, '_blank');
