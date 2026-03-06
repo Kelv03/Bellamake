@@ -12,7 +12,6 @@
         .btn-rosa:hover { background-color: #c02673; }
         .btn-vermelho { background-color: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
         
-        /* Layout dividido */
         .lado-esquerdo { flex: 2; padding: 20px; overflow-y: auto; background: white; }
         .lado-direito { flex: 1; padding: 20px; background: #fff0f6; border-left: 2px solid #f8d7da; display: flex; flex-direction: column; }
         
@@ -21,7 +20,6 @@
         .card-produto { border: 1px solid #eee; padding: 10px; border-radius: 8px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .card-produto img { width: 100%; height: 120px; object-fit: cover; border-radius: 5px; }
         
-        /* Modal Cor/Qtd */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 100;}
         .modal-conteudo { background: white; padding: 20px; border-radius: 8px; width: 300px; text-align: center; }
         .modal-conteudo select, .modal-conteudo input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box;}
@@ -34,7 +32,7 @@
     <div class="lado-esquerdo">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
             <h2 style="color: #d63384; margin: 0;"><i class="fas fa-store"></i> Caixa (PDV)</h2>
-            <a href="admin.html" style="color: #dc3545; text-decoration: none; font-weight: bold;"><i class="fas fa-sign-out-alt"></i> Sair</a>
+            <a href="#" onclick="sairPDV()" style="color: #dc3545; text-decoration: none; font-weight: bold;"><i class="fas fa-sign-out-alt"></i> Sair do Caixa</a>
         </div>
         <input type="text" id="busca" class="busca" placeholder="Buscar produto..." onkeyup="filtrarProdutos()">
         <div class="grid-produtos" id="lista-produtos">Carregando estoque...</div>
@@ -77,20 +75,48 @@
     let carrinho = [];
     let prodSelecionado = null;
 
-    window.onload = carregarProdutos;
+    window.onload = () => {
+        // TRAVA DE SEGURANÇA! Expulsa se não estiver logado.
+        if (localStorage.getItem('sessaoBellaMake') !== 'autorizado') {
+            alert("🔒 Acesso Negado! Faça login no painel primeiro.");
+            window.location.href = 'admin.html';
+            return;
+        }
+        carregarProdutos();
+    };
+
+    function sairPDV() {
+        localStorage.removeItem('sessaoBellaMake');
+        localStorage.removeItem('tipoUsuario');
+        window.location.href = 'admin.html';
+    }
 
     async function carregarProdutos() {
-        const resp = await fetch(`${API_URL}/produtos`);
-        const todos = await resp.json();
-        produtos = todos.filter(p => p.ativo === true && p.estoque > 0);
-        renderizarProdutos(produtos);
+        try {
+            const resp = await fetch(`${API_URL}/produtos`);
+            const todos = await resp.json();
+            
+            // Filtra com parseInt para evitar que texto empaque a lista
+            produtos = todos.filter(p => p.ativo === true && parseInt(p.estoque || 0) > 0);
+            
+            if(produtos.length === 0) {
+                document.getElementById('lista-produtos').innerHTML = '<p style="color: #888; text-align:center; width: 100%;">Nenhum produto em estoque.</p>';
+            } else {
+                renderizarProdutos(produtos);
+            }
+        } catch (err) {
+            document.getElementById('lista-produtos').innerHTML = '<p style="color: red;">Erro ao buscar produtos. Atualize a página.</p>';
+        }
     }
 
     function renderizarProdutos(lista) {
         const div = document.getElementById('lista-produtos');
         div.innerHTML = '';
         lista.forEach(p => {
-            const precoReal = (p.preco_promo && p.preco_promo > 0) ? p.preco_promo : p.preco;
+            const preco = parseFloat(p.preco) || 0;
+            const promo = parseFloat(p.preco_promo) || 0;
+            const precoReal = promo > 0 ? promo : preco;
+            
             div.innerHTML += `
                 <div class="card-produto" onclick="abrirModal('${p._id}')" style="cursor: pointer;">
                     <img src="${p.imagem}" onerror="this.src='https://via.placeholder.com/150'">
@@ -112,7 +138,10 @@
         prodSelecionado = produtos.find(p => p._id === id);
         document.getElementById('modal-nome').innerText = prodSelecionado.nome;
         
-        const precoReal = (prodSelecionado.preco_promo && prodSelecionado.preco_promo > 0) ? prodSelecionado.preco_promo : prodSelecionado.preco;
+        const preco = parseFloat(prodSelecionado.preco) || 0;
+        const promo = parseFloat(prodSelecionado.preco_promo) || 0;
+        const precoReal = promo > 0 ? promo : preco;
+        
         document.getElementById('modal-preco').innerText = `R$ ${precoReal.toFixed(2)}`;
         
         const selCor = document.getElementById('modal-cor');
@@ -121,7 +150,7 @@
         if (prodSelecionado.cores && prodSelecionado.cores.length > 0) {
             areaCor.classList.remove('escondido');
             selCor.innerHTML = prodSelecionado.cores
-                .filter(c => parseInt(c.estoque) > 0)
+                .filter(c => parseInt(c.estoque || 0) > 0)
                 .map(c => `<option value="${c.nome}">${c.nome} (Qtd: ${c.estoque})</option>`).join('');
             
             if(selCor.innerHTML === '') return alert("Todas as cores esgotaram!");
@@ -142,19 +171,21 @@
     function confirmarAdd() {
         const qtd = parseInt(document.getElementById('modal-qtd').value);
         let corNome = '';
-        let estoqueDisponivel = prodSelecionado.estoque;
+        let estoqueDisponivel = parseInt(prodSelecionado.estoque || 0);
 
         if (prodSelecionado.cores && prodSelecionado.cores.length > 0) {
             corNome = document.getElementById('modal-cor').value;
             const corObj = prodSelecionado.cores.find(c => c.nome === corNome);
-            estoqueDisponivel = parseInt(corObj.estoque);
+            estoqueDisponivel = parseInt(corObj.estoque || 0);
         }
 
         if (qtd > estoqueDisponivel || qtd < 1) {
             return alert(`Estoque insuficiente! Temos apenas ${estoqueDisponivel}.`);
         }
 
-        const precoReal = (prodSelecionado.preco_promo && prodSelecionado.preco_promo > 0) ? prodSelecionado.preco_promo : prodSelecionado.preco;
+        const preco = parseFloat(prodSelecionado.preco) || 0;
+        const promo = parseFloat(prodSelecionado.preco_promo) || 0;
+        const precoReal = promo > 0 ? promo : preco;
 
         carrinho.push({
             id: prodSelecionado._id,
@@ -217,7 +248,7 @@
             alert("✅ Venda concluída e estoque baixado!");
             carrinho = [];
             atualizarCarrinho();
-            carregarProdutos(); // Recarrega para pegar o novo estoque
+            carregarProdutos(); 
         } else {
             alert("Erro: " + data.mensagem);
         }
