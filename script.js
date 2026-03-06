@@ -17,7 +17,7 @@ async function carregarProdutos() {
         const resp = await fetch(`${API_URL}/produtos`);
         const todos = await resp.json();
         
-        // BLINDAGEM: Garante que só mostre produtos ativos e com estoque > 0 (convertido para número)
+        // BLINDAGEM: Garante que só mostre produtos ativos e com estoque > 0
         produtosVitrine = todos.filter(p => p.ativo === true && parseInt(p.estoque || 0) > 0);
         aplicarFiltros();
     } catch (err) {
