@@ -7,8 +7,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body { font-family: Arial, sans-serif; background-color: #f4f4f9; margin: 0; padding: 20px; }
-        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        h1, h2 { color: #d63384; text-align: center; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        h1, h2, h3 { color: #d63384; text-align: center; }
         .escondido { display: none; }
         input, select, button { width: 100%; padding: 10px; margin: 5px 0 15px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
         button { background-color: #d63384; color: white; border: none; cursor: pointer; font-weight: bold; }
@@ -20,33 +20,37 @@
         th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
         th { background-color: #f8f9fa; }
         img.thumb { width: 50px; height: 50px; object-fit: cover; border-radius: 5px; }
-        .grid-duas-colunas { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .grid-tres-colunas { display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 20px; }
         .busca-container { display: flex; gap: 10px; margin-bottom: 20px; }
         .busca-container input { margin: 0; }
+        .linha-cor { display: flex; gap: 10px; align-items: center; margin-bottom: 5px; background: #fff0f6; padding: 10px; border-radius: 5px;}
+        .linha-cor input { margin: 0; }
     </style>
 </head>
 <body>
 
-<div class="container" id="tela-login">
-    <h1>🦋 Login Lojista</h1>
-    <input type="password" id="senha" placeholder="Digite a senha (ex: gaby123)">
-    <button onclick="fazerLogin()">Entrar no Painel</button>
+<div class="container" id="tela-login" style="max-width: 400px; margin-top: 50px;">
+    <h1>🦋 Login do Sistema</h1>
+    <input type="text" id="usuario" placeholder="Usuário (ex: admin)">
+    <input type="password" id="senha" placeholder="Senha (ex: mila123)">
+    <button onclick="fazerLogin()">Entrar</button>
 </div>
 
 <div class="container escondido" id="tela-painel">
-    <h1>🦋 Painel de Controle - Bella Make</h1>
-    <button onclick="sair()" class="btn-vermelho" style="width: auto; float: right;">Sair</button>
+    <h1>🦋 Painel Gerencial - Bella Make</h1>
+    <button onclick="sair()" class="btn-vermelho" style="width: auto; float: right;">Sair do Sistema</button>
     <br><br>
 
-    <div class="grid-duas-colunas">
-        <div>
-            <h2>📦 Gerenciar Produtos</h2>
+    <div class="grid-tres-colunas">
+        
+        <div style="background: #fdfdfd; padding: 15px; border-radius: 8px; border: 1px solid #eee;">
+            <h2>📦 Cadastrar Produto</h2>
             <input type="hidden" id="prod-id">
             <input type="text" id="prod-nome" placeholder="Nome do Produto">
             
             <div style="display: flex; gap: 10px;">
-                <input type="number" id="prod-preco" placeholder="Preço Normal" step="0.01">
-                <input type="number" id="prod-preco-promo" placeholder="Preço Promoção (opcional)" step="0.01">
+                <input type="number" id="prod-preco" placeholder="Preço" step="0.01">
+                <input type="number" id="prod-preco-promo" placeholder="Promoção (opcional)" step="0.01">
             </div>
 
             <select id="prod-categoria">
@@ -59,15 +63,24 @@
             </select>
 
             <input type="text" id="prod-imagem" placeholder="URL da Imagem">
-            <input type="number" id="prod-estoque" placeholder="Quantidade no Estoque" min="0">
-            <input type="text" id="prod-cores" placeholder="Cores (separe por vírgula. Ex: Vermelho, Rosa)">
-            <button onclick="salvarProduto()">Guardar Produto</button>
+            
+            <hr>
+            <h3>Estoque e Variações</h3>
+            <p style="font-size: 12px; color: #666; margin-top: 0;">Se o produto não tiver variação de cor, preencha apenas o estoque geral.</p>
+            
+            <input type="number" id="prod-estoque-geral" placeholder="Estoque Geral (Sem Cor)" min="0">
+            
+            <div id="area-cores"></div>
+            <button class="btn-amarelo" onclick="adicionarCampoCor()">+ Adicionar Cor Específica</button>
+            
+            <hr>
+            <button onclick="salvarProduto()" style="margin-top: 15px;">Salvar Produto</button>
         </div>
 
         <div>
             <h2>🚚 Configurar Entregas</h2>
-            <input type="text" id="frete-cidade" placeholder="Nome da Cidade ou Retirada">
-            <input type="number" id="frete-valor" placeholder="Valor da Entrega (ex: 5.00)" step="0.01">
+            <input type="text" id="frete-cidade" placeholder="Nome da Cidade">
+            <input type="number" id="frete-valor" placeholder="Valor (ex: 5.00)" step="0.01">
             <button onclick="salvarFrete()">Adicionar Cidade</button>
 
             <table id="tabela-fretes">
@@ -75,6 +88,20 @@
                 <tbody id="lista-fretes"></tbody>
             </table>
         </div>
+
+        <div>
+            <h2>👩‍💼 Vendedores (PDV)</h2>
+            <p style="font-size: 12px; color: #666;">Crie acessos para vendas presenciais.</p>
+            <input type="text" id="vend-usuario" placeholder="Nome de Usuário (ex: ana)">
+            <input type="password" id="vend-senha" placeholder="Senha do Vendedor">
+            <button onclick="salvarVendedor()">Cadastrar Vendedor</button>
+
+            <table id="tabela-vendedores">
+                <thead><tr><th>Usuário</th><th>Ação</th></tr></thead>
+                <tbody id="lista-vendedores"></tbody>
+            </table>
+        </div>
+
     </div>
 
     <hr style="margin: 30px 0;">
@@ -91,7 +118,7 @@
                 <th>Foto</th>
                 <th>Nome</th>
                 <th>Preço</th>
-                <th>Estoque</th>
+                <th>Estoque / Cores</th>
                 <th>Status</th>
                 <th>Ações</th>
             </tr>
@@ -104,21 +131,32 @@
     const API_URL = "https://bellamake.onrender.com";
     let produtosGlobal = [];
 
+    // --- LOGIN INTELIGENTE ---
     async function fazerLogin() {
+        const usuario = document.getElementById('usuario').value || 'admin';
         const senha = document.getElementById('senha').value;
+        
         const resp = await fetch(`${API_URL}/login`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({senha})
+            body: JSON.stringify({usuario, senha})
         });
         const data = await resp.json();
+        
         if(data.sucesso) {
-            document.getElementById('tela-login').classList.add('escondido');
-            document.getElementById('tela-painel').classList.remove('escondido');
-            carregarProdutos();
-            carregarFretes();
+            if (data.tipo === 'vendedor') {
+                // Se for vendedor, manda pro PDV (Criaremos na Fase 3)
+                window.location.href = 'pdv.html'; 
+            } else {
+                // Se for admin, abre o painel
+                document.getElementById('tela-login').classList.add('escondido');
+                document.getElementById('tela-painel').classList.remove('escondido');
+                carregarProdutos();
+                carregarFretes();
+                carregarVendedores();
+            }
         } else {
-            alert('Senha incorreta!');
+            alert('Usuário ou senha incorretos!');
         }
     }
 
@@ -128,6 +166,30 @@
         document.getElementById('senha').value = '';
     }
 
+    // --- LÓGICA DE CORES DINÂMICAS ---
+    function adicionarCampoCor(nome = '', estoque = '') {
+        const container = document.getElementById('area-cores');
+        const div = document.createElement('div');
+        div.className = 'linha-cor';
+        div.innerHTML = `
+            <input type="text" class="input-cor-nome" placeholder="Cor (ex: Rosa)" value="${nome}">
+            <input type="number" class="input-cor-estoque" placeholder="Qtd" value="${estoque}" min="0">
+            <button class="btn-vermelho btn-pequeno" onclick="this.parentElement.remove()">X</button>
+        `;
+        container.appendChild(div);
+        
+        // Se adicionou cor, bloqueia o estoque geral para evitar confusão
+        document.getElementById('prod-estoque-geral').value = '';
+        document.getElementById('prod-estoque-geral').disabled = true;
+    }
+
+    // Função para liberar o estoque geral se apagar todas as cores
+    setInterval(() => {
+        const temCores = document.querySelectorAll('.linha-cor').length > 0;
+        document.getElementById('prod-estoque-geral').disabled = temCores;
+    }, 500);
+
+    // --- PRODUTOS ---
     async function carregarProdutos() {
         const resp = await fetch(`${API_URL}/produtos`);
         produtosGlobal = await resp.json();
@@ -141,10 +203,15 @@
             const corStatus = p.ativo ? 'green' : 'red';
             const textoStatus = p.ativo ? 'Ativo' : 'Inativo';
             
-            // Lógica para mostrar o preço na tabela
             let precoTexto = `R$ ${parseFloat(p.preco).toFixed(2)}`;
             if (p.preco_promo && p.preco_promo > 0) {
                 precoTexto = `<strike style="color:red; font-size:12px;">R$ ${parseFloat(p.preco).toFixed(2)}</strike><br><b style="color:green;">R$ ${parseFloat(p.preco_promo).toFixed(2)}</b>`;
+            }
+
+            // Mostra o estoque geral ou a lista de cores com seus estoques
+            let infoEstoque = `<b>${p.estoque}</b> (Total)`;
+            if (p.cores && p.cores.length > 0) {
+                infoEstoque = p.cores.map(c => `<span style="font-size:11px; background:#eee; padding:2px 5px; border-radius:3px; margin:2px; display:inline-block;">${c.nome}: <b>${c.estoque}</b></span>`).join('');
             }
 
             const tr = document.createElement('tr');
@@ -152,7 +219,7 @@
                 <td><img src="${p.imagem}" class="thumb" onerror="this.src='https://via.placeholder.com/50'"></td>
                 <td>${p.nome}</td>
                 <td>${precoTexto}</td>
-                <td><b>${p.estoque}</b></td>
+                <td>${infoEstoque}</td>
                 <td style="color: ${corStatus}; font-weight: bold;">${textoStatus}</td>
                 <td>
                     <button class="btn-pequeno btn-amarelo" onclick="editarProduto('${p._id}')"><i class="fas fa-pen"></i></button>
@@ -172,21 +239,36 @@
 
     async function salvarProduto() {
         const id = document.getElementById('prod-id').value;
-        const coresRaw = document.getElementById('prod-cores').value;
-        const coresList = coresRaw ? coresRaw.split(',').map(c => c.trim()) : [];
         const categoria = document.getElementById('prod-categoria').value;
-        const precoPromo = document.getElementById('prod-preco-promo').value;
-
         if (!categoria) return alert("Selecione uma categoria!");
+
+        // Monta a lista de cores e estoques lendo os inputs dinâmicos
+        const linhasCores = document.querySelectorAll('.linha-cor');
+        let coresArray = [];
+        linhasCores.forEach(linha => {
+            const nomeCor = linha.querySelector('.input-cor-nome').value;
+            const estoqueCor = linha.querySelector('.input-cor-estoque').value;
+            if (nomeCor && estoqueCor) {
+                coresArray.push({ nome: nomeCor, estoque: parseInt(estoqueCor) });
+            }
+        });
+
+        // Pega o estoque geral caso não tenha cores
+        let estoqueGeral = document.getElementById('prod-estoque-geral').value;
+        if (coresArray.length === 0 && !estoqueGeral) {
+            estoqueGeral = 0;
+        }
+
+        const precoPromo = document.getElementById('prod-preco-promo').value;
 
         const produto = {
             nome: document.getElementById('prod-nome').value,
             preco: parseFloat(document.getElementById('prod-preco').value),
-            preco_promo: precoPromo ? parseFloat(precoPromo) : 0, // Salva 0 se não tiver promoção
+            preco_promo: precoPromo ? parseFloat(precoPromo) : 0,
             categoria: categoria,
             imagem: document.getElementById('prod-imagem').value,
-            estoque: parseInt(document.getElementById('prod-estoque').value),
-            cores: coresList
+            estoque: coresArray.length > 0 ? 0 : parseInt(estoqueGeral), // O backend vai somar se tiver cores
+            cores: coresArray
         };
 
         let url = `${API_URL}/produtos`;
@@ -205,7 +287,7 @@
             body: JSON.stringify(produto)
         });
 
-        alert('Produto salvo com sucesso!');
+        alert('Produto salvo!');
         limparFormularioProduto();
         carregarProdutos();
     }
@@ -213,14 +295,23 @@
     function editarProduto(id) {
         const p = produtosGlobal.find(x => x._id === id);
         if(!p) return;
+        
         document.getElementById('prod-id').value = p._id;
         document.getElementById('prod-nome').value = p.nome;
         document.getElementById('prod-preco').value = p.preco;
         document.getElementById('prod-preco-promo').value = p.preco_promo > 0 ? p.preco_promo : '';
         document.getElementById('prod-categoria').value = p.categoria;
         document.getElementById('prod-imagem').value = p.imagem;
-        document.getElementById('prod-estoque').value = p.estoque || 0;
-        document.getElementById('prod-cores').value = p.cores ? p.cores.join(', ') : '';
+        
+        document.getElementById('area-cores').innerHTML = ''; // Limpa as cores atuais
+        
+        if (p.cores && p.cores.length > 0) {
+            p.cores.forEach(c => adicionarCampoCor(c.nome, c.estoque));
+            document.getElementById('prod-estoque-geral').value = '';
+        } else {
+            document.getElementById('prod-estoque-geral').value = p.estoque || 0;
+        }
+        
         window.scrollTo(0, 0); 
     }
 
@@ -247,35 +338,29 @@
         document.getElementById('prod-preco-promo').value = '';
         document.getElementById('prod-categoria').value = '';
         document.getElementById('prod-imagem').value = '';
-        document.getElementById('prod-estoque').value = '';
-        document.getElementById('prod-cores').value = '';
+        document.getElementById('prod-estoque-geral').value = '';
+        document.getElementById('area-cores').innerHTML = '';
+        document.getElementById('prod-estoque-geral').disabled = false;
     }
 
-    // FRETES
+    // --- FRETES ---
     async function carregarFretes() {
         const resp = await fetch(`${API_URL}/fretes`);
         const fretes = await resp.json();
         const tbody = document.getElementById('lista-fretes');
         tbody.innerHTML = '';
         fretes.forEach(f => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${f.cidade}</td>
-                <td>R$ ${parseFloat(f.valor).toFixed(2)}</td>
-                <td><button class="btn-pequeno btn-vermelho" onclick="apagarFrete('${f._id}')"><i class="fas fa-trash"></i></button></td>
-            `;
-            tbody.appendChild(tr);
+            tbody.innerHTML += `<tr><td>${f.cidade}</td><td>R$ ${parseFloat(f.valor).toFixed(2)}</td>
+            <td><button class="btn-pequeno btn-vermelho" onclick="apagarFrete('${f._id}')">X</button></td></tr>`;
         });
     }
 
     async function salvarFrete() {
         const cidade = document.getElementById('frete-cidade').value;
         const valor = document.getElementById('frete-valor').value;
-        if(!cidade || !valor) return alert("Preencha a cidade e o valor.");
+        if(!cidade || !valor) return;
         await fetch(`${API_URL}/fretes`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({cidade, valor})
+            method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({cidade, valor})
         });
         document.getElementById('frete-cidade').value = '';
         document.getElementById('frete-valor').value = '';
@@ -283,9 +368,46 @@
     }
 
     async function apagarFrete(id) {
-        if(confirm('Apagar esta opção de entrega?')) {
+        if(confirm('Apagar esta cidade?')) {
             await fetch(`${API_URL}/fretes/${id}`, { method: 'DELETE' });
             carregarFretes();
+        }
+    }
+
+    // --- VENDEDORES ---
+    async function carregarVendedores() {
+        const resp = await fetch(`${API_URL}/vendedores`);
+        const vends = await resp.json();
+        const tbody = document.getElementById('lista-vendedores');
+        tbody.innerHTML = '';
+        vends.forEach(v => {
+            tbody.innerHTML += `<tr><td>${v.usuario}</td>
+            <td><button class="btn-pequeno btn-vermelho" onclick="apagarVendedor('${v._id}')">X</button></td></tr>`;
+        });
+    }
+
+    async function salvarVendedor() {
+        const usuario = document.getElementById('vend-usuario').value;
+        const senha = document.getElementById('vend-senha').value;
+        if(!usuario || !senha) return alert("Preencha usuário e senha!");
+        
+        const resp = await fetch(`${API_URL}/vendedores`, {
+            method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({usuario, senha})
+        });
+        const data = await resp.json();
+        if(data.sucesso) {
+            document.getElementById('vend-usuario').value = '';
+            document.getElementById('vend-senha').value = '';
+            carregarVendedores();
+        } else {
+            alert(data.mensagem);
+        }
+    }
+
+    async function apagarVendedor(id) {
+        if(confirm('Apagar este vendedor? Ele não poderá mais acessar o PDV.')) {
+            await fetch(`${API_URL}/vendedores/${id}`, { method: 'DELETE' });
+            carregarVendedores();
         }
     }
 </script>
