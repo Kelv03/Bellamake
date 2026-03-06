@@ -1,5 +1,5 @@
 const API_URL = "https://bellamake.onrender.com";
-const NUMERO_WHATSAPP = "+558781790842"; // COLOQUE O NÚMERO AQUI
+const NUMERO_WHATSAPP = "+558781790842"; // O número oficial da loja
 
 let produtosVitrine = [];
 let carrinho = [];
@@ -104,15 +104,28 @@ function abrirProduto(id) {
     produtoSelecionado.precoFinal = precoParaCobrar; // Salva o preço oficial para cobrar no carrinho
 
     document.getElementById('detalhe-qtd').value = 1;
-    document.getElementById('detalhe-qtd').max = produtoSelecionado.estoque;
 
     const areaCores = document.getElementById('area-cores');
     const selectCor = document.getElementById('detalhe-cor');
+    
+    // NOVA LÓGICA DE CORES: Só mostra as que têm estoque
     if (produtoSelecionado.cores && produtoSelecionado.cores.length > 0) {
         areaCores.style.display = 'block';
-        selectCor.innerHTML = produtoSelecionado.cores.map(c => `<option value="${c}">${c}</option>`).join('');
+        
+        // Filtra para esconder cores com estoque zero
+        const coresDisponiveis = produtoSelecionado.cores.filter(c => parseInt(c.estoque) > 0);
+        
+        if (coresDisponiveis.length === 0) {
+            selectCor.innerHTML = `<option value="">Esgotado em todas as cores</option>`;
+            document.getElementById('detalhe-qtd').disabled = true;
+        } else {
+            selectCor.innerHTML = coresDisponiveis.map(c => `<option value="${c.nome}">${c.nome}</option>`).join('');
+            document.getElementById('detalhe-qtd').disabled = false;
+        }
     } else {
         areaCores.style.display = 'none';
+        document.getElementById('detalhe-qtd').max = produtoSelecionado.estoque;
+        document.getElementById('detalhe-qtd').disabled = false;
     }
 
     document.getElementById('modal-produto').style.display = 'flex';
@@ -124,19 +137,28 @@ function fecharModal(idModal) {
 
 function adicionarAoCarrinho() {
     const qtd = parseInt(document.getElementById('detalhe-qtd').value);
-    let cor = '';
-    if (produtoSelecionado.cores && produtoSelecionado.cores.length > 0) cor = document.getElementById('detalhe-cor').value;
+    let corNome = '';
+    let estoqueDisponivel = produtoSelecionado.estoque;
 
-    if (qtd > produtoSelecionado.estoque || qtd < 1) {
-        return alert(`Atenção: Só temos ${produtoSelecionado.estoque} unidades em estoque.`);
+    // Lógica para abater do estoque da cor específica
+    if (produtoSelecionado.cores && produtoSelecionado.cores.length > 0) {
+        corNome = document.getElementById('detalhe-cor').value;
+        if (!corNome) return alert("Produto esgotado!"); // Bloqueia se a cor for vazia
+        
+        const corObj = produtoSelecionado.cores.find(c => c.nome === corNome);
+        estoqueDisponivel = parseInt(corObj.estoque);
+    }
+
+    if (qtd > estoqueDisponivel || qtd < 1) {
+        return alert(`Atenção: Só temos ${estoqueDisponivel} unidades desta opção.`);
     }
 
     carrinho.push({
         id: produtoSelecionado._id,
         nome: produtoSelecionado.nome,
-        preco: parseFloat(produtoSelecionado.precoFinal), // Usa o preço da promoção se houver!
+        preco: parseFloat(produtoSelecionado.precoFinal),
         quantidade: qtd,
-        cor: cor
+        cor: corNome
     });
 
     atualizarBadge();
@@ -203,6 +225,7 @@ async function finalizarCompra() {
     const freteNome = selectFrete.options[selectFrete.selectedIndex].text;
     const total = document.getElementById('carrinho-total').innerText;
 
+    // Dispara a baixa de estoque no Backend
     const resp = await fetch(`${API_URL}/comprar`, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
