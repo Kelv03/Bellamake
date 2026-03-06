@@ -3,41 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bella Make - Loja Oficial</title>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <title>Gaby Makes - 🦋 Vitrine</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #ffe6f2; margin: 0; }
+        header { background-color: #d63384; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100;}
+        h1 { margin: 0; font-size: 24px; }
+        .carrinho-btn { background: none; border: none; color: white; font-size: 24px; cursor: pointer; position: relative;}
+        .badge { background: #ffc107; color: black; border-radius: 50%; padding: 2px 6px; font-size: 14px; position: absolute; top: -5px; right: -10px; font-weight: bold;}
+        .container { max-width: 1000px; margin: 20px auto; padding: 0 20px; }
+        .grid-produtos { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
+        .produto-card { background: white; padding: 15px; border-radius: 10px; text-align: center; box-shadow: 0 4px 8px rgba(0,0,0,0.1); cursor: pointer; transition: 0.3s;}
+        .produto-card:hover { transform: scale(1.05); }
+        .produto-card img { width: 100%; height: 200px; object-fit: cover; border-radius: 8px; }
+        .preco { color: #d63384; font-size: 20px; font-weight: bold; margin: 10px 0; }
+        
+        /* Modais (Telas Flutuantes) */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-conteudo { background: white; padding: 20px; border-radius: 10px; max-width: 400px; width: 90%; max-height: 90vh; overflow-y: auto; position: relative;}
+        .fechar { position: absolute; top: 10px; right: 15px; font-size: 24px; cursor: pointer; color: #888; }
+        .btn-rosa { background-color: #d63384; color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 15px;}
+        .btn-rosa:hover { background-color: #c02673; }
+        input, select { width: 100%; padding: 8px; margin-top: 5px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box;}
+        .carrinho-item { display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding: 10px 0; align-items: center;}
+        .btn-remover { background: #dc3545; color: white; border: none; border-radius: 5px; padding: 5px 10px; cursor: pointer; }
+    </style>
 </head>
 <body>
-    <header>
-        <div class="logo-container">
-            <h1> Bella Make</h1>
-            <p>Realce a sua beleza</p>
+
+<header>
+    <h1>🦋 Gaby Makes</h1>
+    <button class="carrinho-btn" onclick="abrirModalCarrinho()">
+        <i class="fas fa-shopping-cart"></i>
+        <span class="badge" id="contador-carrinho">0</span>
+    </button>
+</header>
+
+<div class="container">
+    <div class="grid-produtos" id="vitrine">
+        <h3 style="text-align: center; width: 100%; color: #d63384;">Carregando a loja...</h3>
+    </div>
+</div>
+
+<div id="modal-produto" class="modal">
+    <div class="modal-conteudo">
+        <span class="fechar" onclick="fecharModal('modal-produto')">&times;</span>
+        <img id="detalhe-imagem" src="" style="width: 100%; height: 250px; object-fit: cover; border-radius: 8px;">
+        <h2 id="detalhe-nome" style="color: #d63384; margin-bottom: 5px;"></h2>
+        <p id="detalhe-categoria" style="color: #666; margin-top: 0;"></p>
+        <p class="preco" id="detalhe-preco"></p>
+        <p style="color: #28a745; font-size: 14px;">Estoque disponível: <b id="detalhe-estoque"></b></p>
+        
+        <div id="area-cores" style="display: none;">
+            <label>Escolha a Cor:</label>
+            <select id="detalhe-cor"></select>
         </div>
-        <div class="search-bar">
-            <input type="text" id="searchInput" placeholder="Procurar produto..." onkeyup="filtrarNaTela()">
-            <i class="fas fa-search"></i>
-        </div>
-    </header>
+        
+        <label>Quantidade:</label>
+        <input type="number" id="detalhe-qtd" value="1" min="1">
+        
+        <button class="btn-rosa" onclick="adicionarAoCarrinho()">Adicionar ao Carrinho</button>
+    </div>
+</div>
 
-    <nav class="categories">
-        <button class="cat-btn active" onclick="filtrarCategoria('Todos')">Todos</button>
-        <button class="cat-btn" onclick="filtrarCategoria('Rosto')">Rosto</button>
-        <button class="cat-btn" onclick="filtrarCategoria('Olhos')">Olhos</button>
-        <button class="cat-btn" onclick="filtrarCategoria('Boca')">Boca</button>
-        <button class="cat-btn" onclick="filtrarCategoria('Sobrancelha')">Sobrancelha</button>
-        <button class="cat-btn" onclick="filtrarCategoria('Acessórios')">Acessórios</button>
-    </nav>
+<div id="modal-carrinho" class="modal">
+    <div class="modal-conteudo">
+        <span class="fechar" onclick="fecharModal('modal-carrinho')">&times;</span>
+        <h2 style="color: #d63384;"><i class="fas fa-shopping-cart"></i> Seu Carrinho</h2>
+        
+        <div id="lista-carrinho"></div>
+        
+        <hr>
+        <label>Selecione a Cidade (Frete/Retirada):</label>
+        <select id="select-frete" onchange="calcularTotal()"></select>
+        
+        <h3 style="text-align: right; color: #333;">Subtotal: R$ <span id="carrinho-subtotal">0.00</span></h3>
+        <h3 style="text-align: right; color: #d63384;">Total Final: R$ <span id="carrinho-total">0.00</span></h3>
+        
+        <button class="btn-rosa" onclick="finalizarCompra()">
+            <i class="fab fa-whatsapp"></i> Finalizar Pedido
+        </button>
+    </div>
+</div>
 
-    <main>
-        <div class="product-grid" id="productGrid">
-            <p style="text-align: center; grid-column: 1/-1;">A carregar produtos...</p>
-        </div>
-    </main>
+<footer style="text-align: center; padding: 20px; margin-top: 40px; color: #666;">
+    <a href="admin.html" style="color: #d63384; text-decoration: none;"><i class="fas fa-lock"></i> Área da Lojista</a>
+</footer>
 
-    <footer>
-        <p>&copy; 2026 Bella Make. Desenvolvido por Breno Rezende.</p>
-    </footer>
-
-    <script src="script.js"></script>
+<script src="script.js"></script>
 </body>
 </html>

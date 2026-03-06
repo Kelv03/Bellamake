@@ -1,157 +1,199 @@
-const WHATSAPP_NUMERO = "5587981790842";
-const API_URL = "https://bellamake.onrender.com"; // Endereço do seu Python local
-let produtosGlobais = [];
+const API_URL = "https://bellamake.onrender.com";
+const NUMERO_WHATSAPP = "5500000000000"; // COLOQUE O NÚMERO DELA AQUI!
 
-// --- FUNÇÕES DA VITRINE ---
+let produtosVitrine = [];
+let carrinho = [];
+let fretesDisponiveis = [];
+let produtoSelecionado = null;
+
+// Quando a página carrega, busca os produtos e fretes do banco
+window.onload = async () => {
+    await carregarProdutos();
+    await carregarFretes();
+};
+
 async function carregarProdutos() {
-    try {
-        const resposta = await fetch(`${API_URL}/produtos`);
-        produtosGlobais = await resposta.json();
-        renderizarProdutos(produtosGlobais);
-        
-        // Se estiver no admin, carrega a lista lá também
-        if(document.getElementById('listaAdmin')) {
-            renderizarAdmin();
-        }
-    } catch (erro) {
-        console.error("Erro ao ligar ao servidor:", erro);
-        const grid = document.getElementById('productGrid');
-        if(grid) grid.innerHTML = '<p style="text-align:center; color:red;">Erro ao ligar ao banco de dados. Verifique se o Python está a rodar.</p>';
-    }
-}
-
-function renderizarProdutos(lista) {
-    const grid = document.getElementById('productGrid');
-    if (!grid) return; 
-    grid.innerHTML = '';
-
-    if (lista.length === 0) {
-        grid.innerHTML = '<p style="grid-column: 1/-1; text-align:center;">Nenhum produto encontrado.</p>';
+    const resp = await fetch(`${API_URL}/produtos`);
+    const todos = await resp.json();
+    
+    // Mostra apenas produtos que o Admin deixou ATIVO e que tenham ESTOQUE
+    produtosVitrine = todos.filter(p => p.ativo === true && p.estoque > 0);
+    
+    const vitrine = document.getElementById('vitrine');
+    vitrine.innerHTML = '';
+    
+    if(produtosVitrine.length === 0) {
+        vitrine.innerHTML = '<h3 style="width: 100%; text-align: center; color: #888;">Nenhum produto disponível no momento.</h3>';
         return;
     }
 
-    lista.forEach(prod => {
-        grid.innerHTML += `
-            <div class="card">
-                <img src="${prod.img}" alt="${prod.nome}">
-                <div class="card-info">
-                    <h3>${prod.nome}</h3>
-                    <p>R$ ${parseFloat(prod.preco).toFixed(2).replace('.', ',')}</p>
-                    <button class="btn-buy" onclick="comprarZap('${prod.nome}')">
-                        <i class="fab fa-whatsapp"></i> Comprar
-                    </button>
-                </div>
+    produtosVitrine.forEach(p => {
+        vitrine.innerHTML += `
+            <div class="produto-card" onclick="abrirProduto('${p._id}')">
+                <img src="${p.imagem}" onerror="this.src='https://via.placeholder.com/200'">
+                <h3 style="margin: 10px 0 5px;">${p.nome}</h3>
+                <p class="preco">R$ ${parseFloat(p.preco).toFixed(2)}</p>
+                <button class="btn-rosa" style="margin-top:0;">Ver Detalhes</button>
             </div>
         `;
     });
 }
 
-function comprarZap(nomeProduto) {
-    const texto = encodeURIComponent(`Olá Jamile! Gostaria de comprar o produto: *${nomeProduto}*`);
-    window.open(`https://wa.me/${WHATSAPP_NUMERO}?text=${texto}`, '_blank');
+async function carregarFretes() {
+    const resp = await fetch(`${API_URL}/fretes`);
+    fretesDisponiveis = await resp.json();
 }
 
-function filtrarCategoria(categoria) {
-    document.querySelectorAll('.cat-btn').forEach(btn => btn.classList.remove('active'));
-    event.target.classList.add('active');
+// ---- LÓGICA DO PRODUTO (MODAL) ----
+function abrirProduto(id) {
+    produtoSelecionado = produtosVitrine.find(p => p._id === id);
+    
+    document.getElementById('detalhe-imagem').src = produtoSelecionado.imagem;
+    document.getElementById('detalhe-nome').innerText = produtoSelecionado.nome;
+    document.getElementById('detalhe-categoria').innerText = produtoSelecionado.categoria;
+    document.getElementById('detalhe-preco').innerText = `R$ ${parseFloat(produtoSelecionado.preco).toFixed(2)}`;
+    document.getElementById('detalhe-estoque').innerText = produtoSelecionado.estoque;
+    document.getElementById('detalhe-qtd').value = 1;
+    document.getElementById('detalhe-qtd').max = produtoSelecionado.estoque;
 
-    if (categoria === 'Todos') {
-        renderizarProdutos(produtosGlobais);
+    const areaCores = document.getElementById('area-cores');
+    const selectCor = document.getElementById('detalhe-cor');
+    
+    // Se o produto tiver cores cadastradas pelo admin, mostra a caixa de seleção
+    if (produtoSelecionado.cores && produtoSelecionado.cores.length > 0) {
+        areaCores.style.display = 'block';
+        selectCor.innerHTML = produtoSelecionado.cores.map(c => `<option value="${c}">${c}</option>`).join('');
     } else {
-        const filtrados = produtosGlobais.filter(p => p.categoria === categoria);
-        renderizarProdutos(filtrados);
+        areaCores.style.display = 'none';
     }
+
+    document.getElementById('modal-produto').style.display = 'flex';
 }
 
-function filtrarNaTela() {
-    const termo = document.getElementById('searchInput').value.toLowerCase();
-    const filtrados = produtosGlobais.filter(p => p.nome.toLowerCase().includes(termo));
-    renderizarProdutos(filtrados);
+function fecharModal(idModal) {
+    document.getElementById(idModal).style.display = 'none';
 }
 
-// --- FUNÇÕES DO ADMIN ---
-async function verificarSenha() {
-    const senha = document.getElementById('senhaAdmin').value;
+// ---- LÓGICA DO CARRINHO ----
+function adicionarAoCarrinho() {
+    const qtd = parseInt(document.getElementById('detalhe-qtd').value);
+    let cor = '';
     
-    try {
-        const resposta = await fetch(`${API_URL}/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ senha: senha })
-        });
-        
-        const resultado = await resposta.json();
-        
-        if (resultado.sucesso) {
-            document.getElementById('loginScreen').style.display = 'none';
-            document.getElementById('adminPanel').style.display = 'block';
-            carregarProdutos(); // Garante que carrega atualizado
-        } else {
-            alert('Senha incorreta!');
-        }
-    } catch (erro) {
-        alert('Erro ao ligar ao servidor. O Python está ligado?');
+    if (produtoSelecionado.cores && produtoSelecionado.cores.length > 0) {
+        cor = document.getElementById('detalhe-cor').value;
     }
-}
 
-async function salvarProduto(event) {
-    event.preventDefault();
-    const btn = event.submitter;
-    btn.innerText = "A guardar...";
-    btn.disabled = true;
-
-    const novoProduto = {
-        nome: document.getElementById('nomeProd').value,
-        preco: document.getElementById('precoProd').value,
-        categoria: document.getElementById('catProd').value,
-        img: document.getElementById('imgProd').value
-    };
-
-    try {
-        await fetch(`${API_URL}/produtos`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(novoProduto)
-        });
-        
-        document.getElementById('formProduto').reset();
-        await carregarProdutos(); // Recarrega a lista do banco
-        alert('Produto guardado com sucesso no MongoDB!');
-    } catch (erro) {
-        alert('Erro ao guardar o produto.');
-    } finally {
-        btn.innerText = "Guardar Produto no Banco";
-        btn.disabled = false;
+    if (qtd > produtoSelecionado.estoque || qtd < 1) {
+        alert(`Atenção: Só temos ${produtoSelecionado.estoque} unidades em estoque.`);
+        return;
     }
-}
 
-function renderizarAdmin() {
-    const lista = document.getElementById('listaAdmin');
-    if (!lista) return;
-    lista.innerHTML = '';
-    
-    produtosGlobais.forEach(prod => {
-        lista.innerHTML += `
-            <div class="card-admin">
-                <span><strong>${prod.nome}</strong> (R$ ${prod.preco})</span>
-                <button class="btn-delete" onclick="deletarProduto('${prod._id}')">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </div>
-        `;
+    carrinho.push({
+        id: produtoSelecionado._id,
+        nome: produtoSelecionado.nome,
+        preco: parseFloat(produtoSelecionado.preco),
+        quantidade: qtd,
+        cor: cor
     });
+
+    atualizarBadge();
+    fecharModal('modal-produto');
+    alert("Adicionado ao carrinho! 🛒");
 }
 
-async function deletarProduto(id) {
-    if(confirm('Tem certeza que deseja apagar este produto permanentemente do banco de dados?')) {
-        try {
-            await fetch(`${API_URL}/produtos/${id}`, { method: 'DELETE' });
-            await carregarProdutos(); // Recarrega a lista atualizada
-        } catch (erro) {
-            alert('Erro ao apagar o produto.');
-        }
+function atualizarBadge() {
+    const totalItens = carrinho.reduce((acc, item) => acc + item.quantidade, 0);
+    document.getElementById('contador-carrinho').innerText = totalItens;
+}
+
+function removerDoCarrinho(index) {
+    carrinho.splice(index, 1);
+    atualizarBadge();
+    abrirModalCarrinho(); // Recarrega a tela do carrinho
+}
+
+function abrirModalCarrinho() {
+    const lista = document.getElementById('lista-carrinho');
+    lista.innerHTML = '';
+
+    if (carrinho.length === 0) {
+        lista.innerHTML = '<p style="text-align:center;">Seu carrinho está vazio.</p>';
+    } else {
+        carrinho.forEach((item, i) => {
+            const descCor = item.cor ? ` | Cor: ${item.cor}` : '';
+            lista.innerHTML += `
+                <div class="carrinho-item">
+                    <div style="flex:1;">
+                        <b>${item.nome}</b><span style="font-size:12px; color:#666;">${descCor}</span><br>
+                        ${item.quantidade}x R$ ${item.preco.toFixed(2)}
+                    </div>
+                    <button class="btn-remover" onclick="removerDoCarrinho(${i})"><i class="fas fa-trash"></i></button>
+                </div>
+            `;
+        });
     }
+
+    // Popula a lista de cidades e fretes
+    const selectFrete = document.getElementById('select-frete');
+    selectFrete.innerHTML = '<option value="">Selecione uma opção...</option>';
+    fretesDisponiveis.forEach(f => {
+        selectFrete.innerHTML += `<option value="${f.valor}">${f.cidade} - R$ ${parseFloat(f.valor).toFixed(2)}</option>`;
+    });
+
+    calcularTotal();
+    document.getElementById('modal-carrinho').style.display = 'flex';
 }
 
-// Inicia a aplicação carregando os produtos do MongoDB
-window.onload = carregarProdutos;
+function calcularTotal() {
+    const subtotal = carrinho.reduce((acc, item) => acc + (item.preco * item.quantidade), 0);
+    const frete = parseFloat(document.getElementById('select-frete').value || 0);
+    
+    document.getElementById('carrinho-subtotal').innerText = subtotal.toFixed(2);
+    document.getElementById('carrinho-total').innerText = (subtotal + frete).toFixed(2);
+}
+
+// ---- FINALIZAR COMPRA E BAIXA DE ESTOQUE ----
+async function finalizarCompra() {
+    if (carrinho.length === 0) return alert("Seu carrinho está vazio!");
+    
+    const selectFrete = document.getElementById('select-frete');
+    if (selectFrete.value === "") return alert("Por favor, selecione uma opção de entrega ou retirada.");
+
+    const freteValor = parseFloat(selectFrete.value);
+    const freteNome = selectFrete.options[selectFrete.selectedIndex].text;
+    const total = document.getElementById('carrinho-total').innerText;
+
+    // 1. Manda a lista para o Backend (Python) para dar baixa no estoque
+    const resp = await fetch(`${API_URL}/comprar`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ carrinho: carrinho })
+    });
+
+    const data = await resp.json();
+    
+    if (!data.sucesso) {
+        return alert("Erro ao finalizar: " + data.mensagem);
+    }
+
+    // 2. Monta o texto para o WhatsApp
+    let msg = `🦋 *Novo Pedido - Gaby Makes* 🦋\n\n`;
+    carrinho.forEach(item => {
+        msg += `▫️ ${item.quantidade}x ${item.nome}`;
+        if (item.cor) msg += ` (Cor: ${item.cor})`;
+        msg += ` - R$ ${(item.preco * item.quantidade).toFixed(2)}\n`;
+    });
+    
+    msg += `\n🚚 *Opção:* ${freteNome}\n`;
+    msg += `💰 *Total a pagar: R$ ${total}*\n\n`;
+    msg += `Aguardando informações para pagamento!`;
+
+    // 3. Esvazia o carrinho e abre o WhatsApp da Gaby
+    carrinho = [];
+    atualizarBadge();
+    fecharModal('modal-carrinho');
+    carregarProdutos(); // Recarrega a vitrine para esconder produtos que ficaram sem estoque
+
+    const zapLink = `https://wa.me/${NUMERO_WHATSAPP}?text=${encodeURIComponent(msg)}`;
+    window.open(zapLink, '_blank');
+}
