@@ -29,7 +29,7 @@
 
 <div class="container" id="tela-login">
     <h1>🦋 Login Lojista</h1>
-    <input type="password" id="senha" placeholder="Digite a senha">
+    <input type="password" id="senha" placeholder="Digite a senha (ex: gaby123)">
     <button onclick="fazerLogin()">Entrar no Painel</button>
 </div>
 
@@ -43,8 +43,21 @@
             <h2>📦 Gerenciar Produtos</h2>
             <input type="hidden" id="prod-id">
             <input type="text" id="prod-nome" placeholder="Nome do Produto">
-            <input type="number" id="prod-preco" placeholder="Preço (ex: 29.90)" step="0.01">
-            <input type="text" id="prod-categoria" placeholder="Categoria (ex: Boca, Olhos)">
+            
+            <div style="display: flex; gap: 10px;">
+                <input type="number" id="prod-preco" placeholder="Preço Normal" step="0.01">
+                <input type="number" id="prod-preco-promo" placeholder="Preço Promoção (opcional)" step="0.01">
+            </div>
+
+            <select id="prod-categoria">
+                <option value="">Selecione a Categoria...</option>
+                <option value="Rosto">Rosto</option>
+                <option value="Olhos">Olhos</option>
+                <option value="Boca">Boca</option>
+                <option value="Sobrancelha">Sobrancelha</option>
+                <option value="Acessórios">Acessórios</option>
+            </select>
+
             <input type="text" id="prod-imagem" placeholder="URL da Imagem">
             <input type="number" id="prod-estoque" placeholder="Quantidade no Estoque" min="0">
             <input type="text" id="prod-cores" placeholder="Cores (separe por vírgula. Ex: Vermelho, Rosa)">
@@ -91,7 +104,6 @@
     const API_URL = "https://bellamake.onrender.com";
     let produtosGlobal = [];
 
-    // --- LOGIN ---
     async function fazerLogin() {
         const senha = document.getElementById('senha').value;
         const resp = await fetch(`${API_URL}/login`, {
@@ -116,7 +128,6 @@
         document.getElementById('senha').value = '';
     }
 
-    // --- PRODUTOS ---
     async function carregarProdutos() {
         const resp = await fetch(`${API_URL}/produtos`);
         produtosGlobal = await resp.json();
@@ -129,11 +140,18 @@
         lista.forEach(p => {
             const corStatus = p.ativo ? 'green' : 'red';
             const textoStatus = p.ativo ? 'Ativo' : 'Inativo';
+            
+            // Lógica para mostrar o preço na tabela
+            let precoTexto = `R$ ${parseFloat(p.preco).toFixed(2)}`;
+            if (p.preco_promo && p.preco_promo > 0) {
+                precoTexto = `<strike style="color:red; font-size:12px;">R$ ${parseFloat(p.preco).toFixed(2)}</strike><br><b style="color:green;">R$ ${parseFloat(p.preco_promo).toFixed(2)}</b>`;
+            }
+
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td><img src="${p.imagem}" class="thumb" onerror="this.src='https://via.placeholder.com/50'"></td>
                 <td>${p.nome}</td>
-                <td>R$ ${parseFloat(p.preco).toFixed(2)}</td>
+                <td>${precoTexto}</td>
                 <td><b>${p.estoque}</b></td>
                 <td style="color: ${corStatus}; font-weight: bold;">${textoStatus}</td>
                 <td>
@@ -155,27 +173,30 @@
     async function salvarProduto() {
         const id = document.getElementById('prod-id').value;
         const coresRaw = document.getElementById('prod-cores').value;
-        // Transforma o texto "Vermelho, Rosa" em uma lista real de palavras
         const coresList = coresRaw ? coresRaw.split(',').map(c => c.trim()) : [];
+        const categoria = document.getElementById('prod-categoria').value;
+        const precoPromo = document.getElementById('prod-preco-promo').value;
+
+        if (!categoria) return alert("Selecione uma categoria!");
 
         const produto = {
             nome: document.getElementById('prod-nome').value,
-            preco: document.getElementById('prod-preco').value,
-            categoria: document.getElementById('prod-categoria').value,
+            preco: parseFloat(document.getElementById('prod-preco').value),
+            preco_promo: precoPromo ? parseFloat(precoPromo) : 0, // Salva 0 se não tiver promoção
+            categoria: categoria,
             imagem: document.getElementById('prod-imagem').value,
-            estoque: document.getElementById('prod-estoque').value,
+            estoque: parseInt(document.getElementById('prod-estoque').value),
             cores: coresList
         };
 
         let url = `${API_URL}/produtos`;
         let metodo = 'POST';
 
-        // Se tem ID, é uma atualização (PUT)
         if (id) {
             url = `${API_URL}/produtos/${id}`;
             metodo = 'PUT';
         } else {
-            produto.ativo = true; // Novos produtos começam ativos
+            produto.ativo = true;
         }
 
         await fetch(url, {
@@ -195,11 +216,12 @@
         document.getElementById('prod-id').value = p._id;
         document.getElementById('prod-nome').value = p.nome;
         document.getElementById('prod-preco').value = p.preco;
+        document.getElementById('prod-preco-promo').value = p.preco_promo > 0 ? p.preco_promo : '';
         document.getElementById('prod-categoria').value = p.categoria;
         document.getElementById('prod-imagem').value = p.imagem;
         document.getElementById('prod-estoque').value = p.estoque || 0;
         document.getElementById('prod-cores').value = p.cores ? p.cores.join(', ') : '';
-        window.scrollTo(0, 0); // Sobe a tela para o formulário
+        window.scrollTo(0, 0); 
     }
 
     async function toggleAtivo(id, statusAtual) {
@@ -222,13 +244,14 @@
         document.getElementById('prod-id').value = '';
         document.getElementById('prod-nome').value = '';
         document.getElementById('prod-preco').value = '';
+        document.getElementById('prod-preco-promo').value = '';
         document.getElementById('prod-categoria').value = '';
         document.getElementById('prod-imagem').value = '';
         document.getElementById('prod-estoque').value = '';
         document.getElementById('prod-cores').value = '';
     }
 
-    // --- FRETES ---
+    // FRETES
     async function carregarFretes() {
         const resp = await fetch(`${API_URL}/fretes`);
         const fretes = await resp.json();
@@ -249,7 +272,6 @@
         const cidade = document.getElementById('frete-cidade').value;
         const valor = document.getElementById('frete-valor').value;
         if(!cidade || !valor) return alert("Preencha a cidade e o valor.");
-
         await fetch(`${API_URL}/fretes`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},

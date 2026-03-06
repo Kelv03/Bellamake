@@ -7,7 +7,6 @@ let fretesDisponiveis = [];
 let produtoSelecionado = null;
 let categoriaAtual = 'Todos';
 
-// Quando a página carrega
 window.onload = async () => {
     await carregarProdutos();
     await carregarFretes();
@@ -16,8 +15,6 @@ window.onload = async () => {
 async function carregarProdutos() {
     const resp = await fetch(`${API_URL}/produtos`);
     const todos = await resp.json();
-    
-    // Puxa só os que estão ativos e com estoque
     produtosVitrine = todos.filter(p => p.ativo === true && p.estoque > 0);
     aplicarFiltros();
 }
@@ -27,7 +24,6 @@ async function carregarFretes() {
     fretesDisponiveis = await resp.json();
 }
 
-// ---- LÓGICA DE FILTROS (BARRA DE BUSCA E BOTÕES) ----
 function filtrarCategoria(cat) {
     categoriaAtual = cat;
     aplicarFiltros();
@@ -41,7 +37,11 @@ function aplicarFiltros() {
     const termo = document.getElementById('searchInput').value.toLowerCase();
     
     const filtrados = produtosVitrine.filter(p => {
-        const bateCategoria = categoriaAtual === 'Todos' || p.categoria.toLowerCase() === categoriaAtual.toLowerCase();
+        // Lógica: Se clicou em "Promoções", mostra apenas os que tem preco_promo > 0
+        const bateCategoria = categoriaAtual === 'Todos' || 
+                              (categoriaAtual === 'Promoções' && p.preco_promo > 0) || 
+                              p.categoria.toLowerCase() === categoriaAtual.toLowerCase();
+                              
         const bateNome = p.nome.toLowerCase().includes(termo);
         return bateCategoria && bateNome;
     });
@@ -59,33 +59,55 @@ function renderizarGrid(lista) {
     }
 
     lista.forEach(p => {
-        // Usando as classes do seu design
+        let precoVisual = `<p style="color: #d63384; font-size: 20px; font-weight: bold;">R$ ${parseFloat(p.preco).toFixed(2)}</p>`;
+        
+        // Se tiver promoção, desenha o risco no preço antigo
+        if (p.preco_promo && p.preco_promo > 0) {
+            precoVisual = `
+                <p style="color: #999; text-decoration: line-through; font-size: 14px; margin-bottom: 0;">R$ ${parseFloat(p.preco).toFixed(2)}</p>
+                <p style="color: #28a745; font-size: 22px; font-weight: bold; margin-top: 2px;">R$ ${parseFloat(p.preco_promo).toFixed(2)}</p>
+            `;
+        }
+
         grid.innerHTML += `
             <div class="produto-card" style="background: white; padding: 15px; border-radius: 10px; text-align: center; box-shadow: 0 4px 8px rgba(0,0,0,0.1); cursor: pointer;" onclick="abrirProduto('${p._id}')">
                 <img src="${p.imagem}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px;" onerror="this.src='https://via.placeholder.com/200'">
                 <h3 style="margin: 10px 0 5px;">${p.nome}</h3>
-                <p style="color: #d63384; font-size: 20px; font-weight: bold;">R$ ${parseFloat(p.preco).toFixed(2)}</p>
+                ${precoVisual}
                 <button style="background-color: #d63384; color: white; border: none; padding: 8px; width: 100%; border-radius: 5px; cursor: pointer;">Ver Detalhes</button>
             </div>
         `;
     });
 }
 
-// ---- LÓGICA DO PRODUTO (MODAL) ----
 function abrirProduto(id) {
     produtoSelecionado = produtosVitrine.find(p => p._id === id);
     
     document.getElementById('detalhe-imagem').src = produtoSelecionado.imagem;
     document.getElementById('detalhe-nome').innerText = produtoSelecionado.nome;
     document.getElementById('detalhe-categoria').innerText = produtoSelecionado.categoria;
-    document.getElementById('detalhe-preco').innerText = `R$ ${parseFloat(produtoSelecionado.preco).toFixed(2)}`;
     document.getElementById('detalhe-estoque').innerText = produtoSelecionado.estoque;
+    
+    // Define qual é o preço real que vai para o carrinho
+    let precoParaCobrar = produtoSelecionado.preco;
+    let precoVisualModal = `<p style="color: #d63384; font-size: 24px; font-weight: bold;">R$ ${parseFloat(produtoSelecionado.preco).toFixed(2)}</p>`;
+    
+    if (produtoSelecionado.preco_promo && produtoSelecionado.preco_promo > 0) {
+        precoParaCobrar = produtoSelecionado.preco_promo;
+        precoVisualModal = `
+            <span style="color: #999; text-decoration: line-through; font-size: 16px;">R$ ${parseFloat(produtoSelecionado.preco).toFixed(2)}</span><br>
+            <span style="color: #28a745; font-size: 28px; font-weight: bold;">R$ ${parseFloat(produtoSelecionado.preco_promo).toFixed(2)}</span>
+        `;
+    }
+    
+    document.getElementById('detalhe-preco').innerHTML = precoVisualModal;
+    produtoSelecionado.precoFinal = precoParaCobrar; // Salva o preço oficial para cobrar no carrinho
+
     document.getElementById('detalhe-qtd').value = 1;
     document.getElementById('detalhe-qtd').max = produtoSelecionado.estoque;
 
     const areaCores = document.getElementById('area-cores');
     const selectCor = document.getElementById('detalhe-cor');
-    
     if (produtoSelecionado.cores && produtoSelecionado.cores.length > 0) {
         areaCores.style.display = 'block';
         selectCor.innerHTML = produtoSelecionado.cores.map(c => `<option value="${c}">${c}</option>`).join('');
@@ -100,24 +122,19 @@ function fecharModal(idModal) {
     document.getElementById(idModal).style.display = 'none';
 }
 
-// ---- LÓGICA DO CARRINHO ----
 function adicionarAoCarrinho() {
     const qtd = parseInt(document.getElementById('detalhe-qtd').value);
     let cor = '';
-    
-    if (produtoSelecionado.cores && produtoSelecionado.cores.length > 0) {
-        cor = document.getElementById('detalhe-cor').value;
-    }
+    if (produtoSelecionado.cores && produtoSelecionado.cores.length > 0) cor = document.getElementById('detalhe-cor').value;
 
     if (qtd > produtoSelecionado.estoque || qtd < 1) {
-        alert(`Atenção: Só temos ${produtoSelecionado.estoque} unidades em estoque.`);
-        return;
+        return alert(`Atenção: Só temos ${produtoSelecionado.estoque} unidades em estoque.`);
     }
 
     carrinho.push({
         id: produtoSelecionado._id,
         nome: produtoSelecionado.nome,
-        preco: parseFloat(produtoSelecionado.preco),
+        preco: parseFloat(produtoSelecionado.precoFinal), // Usa o preço da promoção se houver!
         quantidade: qtd,
         cor: cor
     });
@@ -177,14 +194,12 @@ function calcularTotal() {
     document.getElementById('carrinho-total').innerText = (subtotal + frete).toFixed(2);
 }
 
-// ---- FINALIZAR COMPRA E BAIXA DE ESTOQUE ----
 async function finalizarCompra() {
     if (carrinho.length === 0) return alert("Seu carrinho está vazio!");
     
     const selectFrete = document.getElementById('select-frete');
     if (selectFrete.value === "") return alert("Por favor, selecione uma opção de entrega ou retirada.");
 
-    const freteValor = parseFloat(selectFrete.value);
     const freteNome = selectFrete.options[selectFrete.selectedIndex].text;
     const total = document.getElementById('carrinho-total').innerText;
 
@@ -195,10 +210,7 @@ async function finalizarCompra() {
     });
 
     const data = await resp.json();
-    
-    if (!data.sucesso) {
-        return alert("Erro ao finalizar: " + data.mensagem);
-    }
+    if (!data.sucesso) return alert("Erro ao finalizar: " + data.mensagem);
 
     let msg = `🦋 *Novo Pedido - Bella Make* 🦋\n\n`;
     carrinho.forEach(item => {

@@ -1,28 +1,25 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bella Make - Loja Oficial</title>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        /* CSS apenas para as janelinhas e o botão do carrinho não quebrarem o seu visual */
-        .carrinho-btn { background: none; border: none; color: #d63384; font-size: 24px; cursor: pointer; position: relative; margin-left: 15px;}
-        .badge { background: #ffc107; color: black; border-radius: 50%; padding: 2px 6px; font-size: 14px; position: absolute; top: -10px; right: -10px; font-weight: bold;}
-        .search-bar { display: flex; align-items: center; }
+<header>
+        <div class="logo-container" style="text-align: center;">
+            <h1>🦋 Bella Make</h1>
+            <p>Realce a sua beleza</p>
+        </div>
         
-        /* Modais (Telas Flutuantes) */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
-        .modal-conteudo { background: white; padding: 20px; border-radius: 10px; max-width: 400px; width: 90%; max-height: 90vh; overflow-y: auto; position: relative;}
-        .fechar { position: absolute; top: 10px; right: 15px; font-size: 24px; cursor: pointer; color: #888; }
-        .btn-rosa { background-color: #d63384; color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 15px;}
-        .btn-rosa:hover { background-color: #c02673; }
-        .modal-conteudo input, .modal-conteudo select { width: 100%; padding: 8px; margin-top: 5px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box;}
-        .carrinho-item { display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding: 10px 0; align-items: center;}
-        .btn-remover { background: #dc3545; color: white; border: none; border-radius: 5px; padding: 5px 10px; cursor: pointer; }
-    </style>
-</head>
+        <div style="display: flex; justify-content: center; align-items: center; gap: 20px; margin-top: 15px;">
+            
+            <div class="search-bar" style="margin: 0;">
+                <input type="text" id="searchInput" placeholder="Procurar produto..." onkeyup="filtrarNaTela()">
+                <i class="fas fa-search" style="margin-right: 10px;"></i>
+            </div>
+            
+            <button class="carrinho-btn" onclick="abrirModalCarrinho()" style="color: white; font-size: 28px; margin: 0; background: none; border: none; cursor: pointer; position: relative;">
+                <i class="fas fa-shopping-cart"></i>
+                <span class="badge" id="contador-carrinho">0</span>
+            </button>
+            
+        </div>
+    </header>
 <body>
     <header>
         <div class="logo-container">
@@ -42,6 +39,7 @@
 
     <nav class="categories">
         <button class="cat-btn active" onclick="filtrarCategoria('Todos')">Todos</button>
+        <button class="cat-btn" style="background-color: #ffc107; color: black; font-weight: bold;" onclick="filtrarCategoria('Promoções')"><i class="fas fa-tag"></i> Promoções</button>
         <button class="cat-btn" onclick="filtrarCategoria('Rosto')">Rosto</button>
         <button class="cat-btn" onclick="filtrarCategoria('Olhos')">Olhos</button>
         <button class="cat-btn" onclick="filtrarCategoria('Boca')">Boca</button>
@@ -61,8 +59,10 @@
             <img id="detalhe-imagem" src="" style="width: 100%; height: 250px; object-fit: cover; border-radius: 8px;">
             <h2 id="detalhe-nome" style="color: #d63384; margin-bottom: 5px;"></h2>
             <p id="detalhe-categoria" style="color: #666; margin-top: 0;"></p>
-            <p style="color: #d63384; font-size: 20px; font-weight: bold;" id="detalhe-preco"></p>
-            <p style="color: #28a745; font-size: 14px;">Estoque disponível: <b id="detalhe-estoque"></b></p>
+            
+            <div id="detalhe-preco"></div>
+            
+            <p style="color: #28a745; font-size: 14px; margin-top: 10px;">Estoque disponível: <b id="detalhe-estoque"></b></p>
             
             <div id="area-cores" style="display: none;">
                 <label>Escolha a Cor:</label>
