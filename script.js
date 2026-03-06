@@ -1,5 +1,5 @@
 const WHATSAPP_NUMERO = "5587981790842";
-const API_URL = "http://127.0.0.1:5000"; // Endereço do seu Python local
+const API_URL = "https://bellamake.onrender.com"; // Endereço do seu Python local
 let produtosGlobais = [];
 
 // --- FUNÇÕES DA VITRINE ---
