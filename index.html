@@ -24,18 +24,21 @@
     </style>
 </head>
 <body>
-    <header>
-        <div class="logo-container">
-            <h1>Bella Make</h1>
-            <p>Realce a sua beleza</p>
+    <header style="background-color: #d63384; padding: 15px 20px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+        <div class="logo-container" style="text-align: center; margin-bottom: 15px;">
+            <h1 style="margin: 0; font-size: 32px; color: white;"> Bella Make</h1>
+            <p style="margin: 0; font-size: 14px; color: white;">Realce a sua beleza</p>
         </div>
-        <div class="search-bar">
-            <input type="text" id="searchInput" placeholder="Procurar produto..." onkeyup="filtrarNaTela()">
-            <i class="fas fa-search" style="margin-right: 10px;"></i>
+        
+        <div style="display: flex; align-items: center; background: white; border-radius: 25px; padding: 5px 20px; width: 100%; max-width: 600px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <input type="text" id="searchInput" placeholder="Procurar produto..." onkeyup="filtrarNaTela()" style="border: none; outline: none; flex: 1; padding: 8px; font-size: 16px;">
+            <i class="fas fa-search" style="color: #d63384; font-size: 18px; margin-right: 10px;"></i>
             
-            <button class="carrinho-btn" onclick="abrirModalCarrinho()">
+            <div style="height: 30px; width: 1px; background-color: #ccc; margin: 0 15px;"></div>
+            
+            <button class="carrinho-btn" onclick="abrirModalCarrinho()" style="background: none; border: none; color: #d63384; font-size: 24px; cursor: pointer; position: relative;">
                 <i class="fas fa-shopping-cart"></i>
-                <span class="badge" id="contador-carrinho">0</span>
+                <span class="badge" id="contador-carrinho" style="background: #ffc107; color: black; border-radius: 50%; padding: 2px 6px; font-size: 12px; position: absolute; top: -8px; right: -12px; font-weight: bold;">0</span>
             </button>
         </div>
     </header>
