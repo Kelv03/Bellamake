@@ -10,31 +10,24 @@
         .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
         h1, h2, h3 { color: #d63384; text-align: center; }
         .escondido { display: none; }
-        
-        /* Font-size: 16px em inputs evita o zoom automático irritante do iPhone */
         input, select, button { width: 100%; padding: 10px; margin: 5px 0 15px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 16px; }
         button { background-color: #d63384; color: white; border: none; cursor: pointer; font-weight: bold; }
         button:hover { background-color: #c02673; }
         .btn-pequeno { width: auto; padding: 5px 10px; margin: 2px; font-size: 12px; }
         .btn-vermelho { background-color: #dc3545; } .btn-vermelho:hover { background-color: #c82333; }
         .btn-amarelo { background-color: #ffc107; color: black; } .btn-amarelo:hover { background-color: #e0a800; }
-        
-        /* Tabela rolável (arrastar pro lado) para não quebrar no celular */
         table { width: 100%; border-collapse: collapse; margin-top: 10px; display: block; overflow-x: auto; white-space: nowrap; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
         th { background-color: #f8f9fa; }
         img.thumb { width: 50px; height: 50px; object-fit: cover; border-radius: 5px; }
-        
         .grid-tres-colunas { display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 20px; }
         .busca-container { display: flex; gap: 10px; margin-bottom: 20px; }
         .busca-container input { margin: 0; }
         .linha-cor { display: flex; gap: 10px; align-items: center; margin-bottom: 5px; background: #fff0f6; padding: 10px; border-radius: 5px;}
         .linha-cor input { margin: 0; }
-        
-        /* --- MÁGICA DO CELULAR --- */
         @media (max-width: 800px) {
             body { padding: 10px; }
-            .grid-tres-colunas { grid-template-columns: 1fr; } /* Empilha tudo */
+            .grid-tres-colunas { grid-template-columns: 1fr; }
             .container { padding: 15px; }
             .busca-container { flex-direction: column; }
             .busca-container button { width: 100% !important; }
@@ -45,8 +38,8 @@
 
 <div class="container" id="tela-login" style="max-width: 400px; margin-top: 50px;">
     <h1>🦋 Login do Sistema</h1>
-    <input type="text" id="usuario" placeholder="Usuário">
-    <input type="password" id="senha" placeholder="Senha">
+    <input type="text" id="usuario" placeholder="Usuário (ex: admin)">
+    <input type="password" id="senha" placeholder="Senha (ex: mila123)">
     <button onclick="fazerLogin()">Entrar</button>
 </div>
 
@@ -145,7 +138,7 @@
     const API_URL = "https://bellamake.onrender.com";
     let produtosGlobal = [];
 
-    // --- LOGIN INTELIGENTE ---
+    // --- LOGIN INTELIGENTE COM A CHAVE DE SEGURANÇA ---
     async function fazerLogin() {
         const usuario = document.getElementById('usuario').value || 'admin';
         const senha = document.getElementById('senha').value;
@@ -158,11 +151,15 @@
         const data = await resp.json();
         
         if(data.sucesso) {
+            // AQUI ESTÁ A MÁGICA: Ele cria o "crachá" do usuário no navegador
+            localStorage.setItem('sessaoBellaMake', 'autorizado');
+            localStorage.setItem('tipoUsuario', data.tipo);
+
+            // Redireciona a vendedora para o Caixa (PDV)
             if (data.tipo === 'vendedor') {
-                // Se for vendedor, manda pro PDV (Criaremos na Fase 3)
                 window.location.href = 'pdv.html'; 
             } else {
-                // Se for admin, abre o painel
+                // Abre o painel do Admin
                 document.getElementById('tela-login').classList.add('escondido');
                 document.getElementById('tela-painel').classList.remove('escondido');
                 carregarProdutos();
@@ -175,6 +172,10 @@
     }
 
     function sair() {
+        // Remove a chave de segurança ao sair
+        localStorage.removeItem('sessaoBellaMake');
+        localStorage.removeItem('tipoUsuario');
+        
         document.getElementById('tela-painel').classList.add('escondido');
         document.getElementById('tela-login').classList.remove('escondido');
         document.getElementById('senha').value = '';
@@ -192,12 +193,10 @@
         `;
         container.appendChild(div);
         
-        // Se adicionou cor, bloqueia o estoque geral para evitar confusão
         document.getElementById('prod-estoque-geral').value = '';
         document.getElementById('prod-estoque-geral').disabled = true;
     }
 
-    // Função para liberar o estoque geral se apagar todas as cores
     setInterval(() => {
         const temCores = document.querySelectorAll('.linha-cor').length > 0;
         document.getElementById('prod-estoque-geral').disabled = temCores;
@@ -222,7 +221,6 @@
                 precoTexto = `<strike style="color:red; font-size:12px;">R$ ${parseFloat(p.preco).toFixed(2)}</strike><br><b style="color:green;">R$ ${parseFloat(p.preco_promo).toFixed(2)}</b>`;
             }
 
-            // Mostra o estoque geral ou a lista de cores com seus estoques
             let infoEstoque = `<b>${p.estoque}</b> (Total)`;
             if (p.cores && p.cores.length > 0) {
                 infoEstoque = p.cores.map(c => `<span style="font-size:11px; background:#eee; padding:2px 5px; border-radius:3px; margin:2px; display:inline-block;">${c.nome}: <b>${c.estoque}</b></span>`).join('');
@@ -256,7 +254,6 @@
         const categoria = document.getElementById('prod-categoria').value;
         if (!categoria) return alert("Selecione uma categoria!");
 
-        // Monta a lista de cores e estoques lendo os inputs dinâmicos
         const linhasCores = document.querySelectorAll('.linha-cor');
         let coresArray = [];
         linhasCores.forEach(linha => {
@@ -267,7 +264,6 @@
             }
         });
 
-        // Pega o estoque geral caso não tenha cores
         let estoqueGeral = document.getElementById('prod-estoque-geral').value;
         if (coresArray.length === 0 && !estoqueGeral) {
             estoqueGeral = 0;
@@ -281,7 +277,7 @@
             preco_promo: precoPromo ? parseFloat(precoPromo) : 0,
             categoria: categoria,
             imagem: document.getElementById('prod-imagem').value,
-            estoque: coresArray.length > 0 ? 0 : parseInt(estoqueGeral), // O backend vai somar se tiver cores
+            estoque: coresArray.length > 0 ? 0 : parseInt(estoqueGeral),
             cores: coresArray
         };
 
@@ -317,7 +313,7 @@
         document.getElementById('prod-categoria').value = p.categoria;
         document.getElementById('prod-imagem').value = p.imagem;
         
-        document.getElementById('area-cores').innerHTML = ''; // Limpa as cores atuais
+        document.getElementById('area-cores').innerHTML = ''; 
         
         if (p.cores && p.cores.length > 0) {
             p.cores.forEach(c => adicionarCampoCor(c.nome, c.estoque));
@@ -330,11 +326,7 @@
     }
 
     async function toggleAtivo(id, statusAtual) {
-        await fetch(`${API_URL}/produtos/${id}`, {
-            method: 'PUT',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ ativo: !statusAtual })
-        });
+        await fetch(`${API_URL}/produtos/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ ativo: !statusAtual }) });
         carregarProdutos();
     }
 
@@ -373,19 +365,14 @@
         const cidade = document.getElementById('frete-cidade').value;
         const valor = document.getElementById('frete-valor').value;
         if(!cidade || !valor) return;
-        await fetch(`${API_URL}/fretes`, {
-            method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({cidade, valor})
-        });
+        await fetch(`${API_URL}/fretes`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({cidade, valor}) });
         document.getElementById('frete-cidade').value = '';
         document.getElementById('frete-valor').value = '';
         carregarFretes();
     }
 
     async function apagarFrete(id) {
-        if(confirm('Apagar esta cidade?')) {
-            await fetch(`${API_URL}/fretes/${id}`, { method: 'DELETE' });
-            carregarFretes();
-        }
+        if(confirm('Apagar esta cidade?')) { await fetch(`${API_URL}/fretes/${id}`, { method: 'DELETE' }); carregarFretes(); }
     }
 
     // --- VENDEDORES ---
