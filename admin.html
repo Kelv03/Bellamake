@@ -10,21 +10,35 @@
         .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
         h1, h2, h3 { color: #d63384; text-align: center; }
         .escondido { display: none; }
-        input, select, button { width: 100%; padding: 10px; margin: 5px 0 15px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+        
+        /* Font-size: 16px em inputs evita o zoom automático irritante do iPhone */
+        input, select, button { width: 100%; padding: 10px; margin: 5px 0 15px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 16px; }
         button { background-color: #d63384; color: white; border: none; cursor: pointer; font-weight: bold; }
         button:hover { background-color: #c02673; }
         .btn-pequeno { width: auto; padding: 5px 10px; margin: 2px; font-size: 12px; }
         .btn-vermelho { background-color: #dc3545; } .btn-vermelho:hover { background-color: #c82333; }
         .btn-amarelo { background-color: #ffc107; color: black; } .btn-amarelo:hover { background-color: #e0a800; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        
+        /* Tabela rolável (arrastar pro lado) para não quebrar no celular */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; display: block; overflow-x: auto; white-space: nowrap; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
         th { background-color: #f8f9fa; }
         img.thumb { width: 50px; height: 50px; object-fit: cover; border-radius: 5px; }
+        
         .grid-tres-colunas { display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 20px; }
         .busca-container { display: flex; gap: 10px; margin-bottom: 20px; }
         .busca-container input { margin: 0; }
         .linha-cor { display: flex; gap: 10px; align-items: center; margin-bottom: 5px; background: #fff0f6; padding: 10px; border-radius: 5px;}
         .linha-cor input { margin: 0; }
+        
+        /* --- MÁGICA DO CELULAR --- */
+        @media (max-width: 800px) {
+            body { padding: 10px; }
+            .grid-tres-colunas { grid-template-columns: 1fr; } /* Empilha tudo */
+            .container { padding: 15px; }
+            .busca-container { flex-direction: column; }
+            .busca-container button { width: 100% !important; }
+        }
     </style>
 </head>
 <body>
