@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bella Make - Loja Oficial</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <div class="logo-container">
+            <h1> Bella Make</h1>
+            <p>Realce a sua beleza</p>
+        </div>
+        <div class="search-bar">
+            <input type="text" id="searchInput" placeholder="Procurar produto..." onkeyup="filtrarNaTela()">
+            <i class="fas fa-search"></i>
+        </div>
+    </header>
+
+    <nav class="categories">
+        <button class="cat-btn active" onclick="filtrarCategoria('Todos')">Todos</button>
+        <button class="cat-btn" onclick="filtrarCategoria('Rosto')">Rosto</button>
+        <button class="cat-btn" onclick="filtrarCategoria('Olhos')">Olhos</button>
+        <button class="cat-btn" onclick="filtrarCategoria('Boca')">Boca</button>
+        <button class="cat-btn" onclick="filtrarCategoria('Sobrancelha')">Sobrancelha</button>
+        <button class="cat-btn" onclick="filtrarCategoria('Acessórios')">Acessórios</button>
+    </nav>
+
+    <main>
+        <div class="product-grid" id="productGrid">
+            <p style="text-align: center; grid-column: 1/-1;">A carregar produtos...</p>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 Bella Make. Desenvolvido por Breno Rezende.</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
