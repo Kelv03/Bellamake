@@ -7,103 +7,189 @@
     <link rel="stylesheet" href="style.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        /* Carrinho agora está BRANCO e com tamanho ajustado para dar contraste! */
-        .carrinho-btn { background: none; border: none; color: #ffffff; font-size: 28px; cursor: pointer; position: relative; margin-left: 15px;}
-        .badge { background: #ffc107; color: black; border-radius: 50%; padding: 2px 6px; font-size: 14px; position: absolute; top: -10px; right: -12px; font-weight: bold;}
-        .search-bar { display: flex; align-items: center; }
+        :root { --rosa-forte: #d63384; --rosa-hover: #c02673; --bg-claro: #f4f6f8; --grafite: #2b2b2b;}
         
-        /* Modais */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
-        .modal-conteudo { background: white; padding: 20px; border-radius: 10px; max-width: 400px; width: 90%; max-height: 90vh; overflow-y: auto; position: relative;}
-        .fechar { position: absolute; top: 10px; right: 15px; font-size: 24px; cursor: pointer; color: #888; }
-        .btn-rosa { background-color: #d63384; color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 15px;}
-        .btn-rosa:hover { background-color: #c02673; }
-        .modal-conteudo input, .modal-conteudo select { width: 100%; padding: 8px; margin-top: 5px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box;}
-        .carrinho-item { display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding: 10px 0; align-items: center;}
-        .btn-remover { background: #dc3545; color: white; border: none; border-radius: 5px; padding: 5px 10px; cursor: pointer; }
+        body, html { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg-claro); overflow-x: hidden; display: flex; flex-direction: column; min-height: 100vh;}
+
+        /* --- TELA DE CARREGAMENTO --- */
+        #tela-loading { position: fixed; inset: 0; background: #ffffff; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.5s ease; }
+        .ring-light { width: 70px; height: 70px; border-radius: 50%; border: 5px solid #ffebf3; border-top: 5px solid var(--rosa-forte); border-left: 5px solid var(--rosa-hover); animation: girarRing 1s linear infinite; margin-bottom: 25px; box-shadow: 0 0 20px rgba(214, 51, 132, 0.3); }
+        .texto-loading { color: var(--rosa-forte); font-weight: 800; letter-spacing: 2px; font-size: 16px; text-transform: uppercase; animation: pulseGlow 1.5s infinite; }
+        @keyframes girarRing { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes pulseGlow { 0%, 100% { opacity: 1; text-shadow: 0 0 5px rgba(214, 51, 132, 0.4); } 50% { opacity: 0.5; text-shadow: none; } }
+
+        /* --- HEADER MOBILE --- */
+        header { background-color: var(--rosa-forte); padding: 15px 20px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.1);}
+        .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; width: 100%; max-width: 1200px; margin-left: auto; margin-right: auto;}
+        
+        .menu-btn { background: none; border: none; color: white; font-size: 24px; cursor: pointer; padding: 5px;}
+        .logo-container h1 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: 1px; color: white; text-align: center;}
+        
+        .carrinho-btn { background: none; border: none; color: white; font-size: 24px; cursor: pointer; position: relative; padding: 5px;}
+        .carrinho-btn .badge { background: #ffc107; color: black; border-radius: 50%; padding: 3px 6px; font-size: 11px; position: absolute; top: -2px; right: -5px; font-weight: bold; border: 2px solid var(--rosa-forte);}
+
+        /* Barra de busca */
+        .busca-container { display: flex; align-items: center; background: white; border-radius: 25px; padding: 5px 15px; width: 100%; max-width: 1200px; margin: 0 auto; box-shadow: 0 4px 10px rgba(0,0,0,0.1); box-sizing: border-box;}
+        .busca-container input { border: none; outline: none; flex: 1; padding: 10px; font-size: 15px; border-radius: 25px; min-width: 0;}
+        .busca-container i.fa-search { color: #888; font-size: 16px; margin-left: 10px;}
+
+        /* --- MENU DE CATEGORIAS HORIZONTAL (O que converte vendas) --- */
+        .categories-wrapper { background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .categories { display: flex; gap: 10px; padding: 15px 20px; max-width: 1200px; margin: 0 auto; overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none; }
+        .categories::-webkit-scrollbar { display: none; }
+        .cat-btn { background: #f0f0f0; border: none; padding: 10px 18px; border-radius: 25px; cursor: pointer; font-weight: 600; color: #555; transition: 0.3s; display: flex; align-items: center; gap: 8px; white-space: nowrap; font-size: 14px; }
+        .cat-btn.promo { background-color: #ffc107; color: black; }
+        .cat-btn.active { background-color: var(--grafite) !important; color: white !important; }
+
+        /* --- MENU LATERAL ESQUERDO (Apenas Utilidades) --- */
+        .menu-lateral { position: fixed; top: 0; left: -100%; width: 280px; height: 100vh; background: white; z-index: 2000; box-shadow: 5px 0 15px rgba(0,0,0,0.1); transition: left 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); display: flex; flex-direction: column; }
+        .menu-lateral.aberto { left: 0; }
+        .menu-header { padding: 30px 20px 20px; background: var(--rosa-forte); color: white; display: flex; justify-content: space-between; align-items: center;}
+        .menu-header h2 { margin: 0; font-size: 22px;}
+        .fechar-menu { background: none; border: none; color: white; font-size: 28px; cursor: pointer;}
+        .menu-links { padding: 20px 0; overflow-y: auto;}
+        .menu-links a { display: flex; align-items: center; gap: 15px; padding: 15px 20px; color: #444; text-decoration: none; font-size: 16px; border-bottom: 1px solid #f0f0f0; transition: 0.2s;}
+        .menu-links a i { color: var(--rosa-forte); width: 20px; text-align: center; font-size: 18px;}
+        .menu-links a:hover { background: #fff5f8; padding-left: 25px; color: var(--rosa-forte);}
+
+        /* --- CARRINHO LATERAL DIREITO --- */
+        .carrinho-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1999; display: none; backdrop-filter: blur(2px);}
+        .carrinho-lateral { position: fixed; top: 0; right: -100%; width: 100%; max-width: 400px; height: 100vh; background: white; z-index: 2000; box-shadow: -5px 0 15px rgba(0,0,0,0.1); transition: right 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); display: flex; flex-direction: column; }
+        .carrinho-lateral.aberto { right: 0; }
+        .carrinho-header { padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: #fff;}
+        .carrinho-header h2 { margin: 0; color: var(--rosa-forte); font-size: 20px;}
+        .fechar-carrinho { font-size: 24px; color: #888; cursor: pointer; background: none; border: none; }
+        .carrinho-body { padding: 20px; overflow-y: auto; flex: 1; background: #fafafa;}
+        .carrinho-item { display: flex; justify-content: space-between; background: white; border-radius: 8px; padding: 15px; margin-bottom: 10px; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);}
+        .btn-remover { background: #ffebee; color: #dc3545; border: none; border-radius: 5px; width: 30px; height: 30px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s;}
+        .carrinho-footer { padding: 20px; border-top: 1px solid #eee; background: white; box-shadow: 0 -4px 10px rgba(0,0,0,0.03);}
+        .carrinho-footer select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-top: 5px; margin-bottom: 15px; font-size: 15px;}
+        .btn-rosa { background-color: var(--rosa-forte); color: white; border: none; padding: 12px; width: 100%; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; transition: 0.3s;}
+
+        /* --- GRID E MODAL PRODUTO --- */
+        main { padding: 20px; max-width: 1200px; margin: 0 auto; flex: 1; width: 100%; box-sizing: border-box;}
+        .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; }
+        .produto-card { background: white; border-radius: 12px; padding: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .produto-card img { width: 100%; height: 140px; object-fit: contain; margin-bottom: 10px; }
+        .produto-card h3 { font-size: 13px; margin: 5px 0; color: #333; height: 36px; overflow: hidden; }
+        .produto-card .preco { font-size: 16px; font-weight: bold; color: var(--rosa-forte); margin-bottom: 10px; }
+        
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 2500; justify-content: center; align-items: center; backdrop-filter: blur(3px);}
+        .modal-conteudo { background: white; padding: 25px; border-radius: 15px; max-width: 400px; width: 90%; max-height: 90vh; overflow-y: auto; position: relative; }
+        .fechar { position: absolute; top: 15px; right: 20px; font-size: 28px; cursor: pointer; color: #aaa;}
+        .escondido { display: none !important; opacity: 0; pointer-events: none;}
+        
+        /* --- ESTILO DO RODAPÉ --- */
+        footer { background-color: #2b2b2b; color: white; text-align: center; padding: 25px 20px; margin-top: auto; font-size: 14px; width: 100%; box-sizing: border-box;}
+        footer a { color: var(--rosa-forte); text-decoration: none; font-weight: bold;}
     </style>
 </head>
 <body>
-    <header style="background-color: #d63384; padding: 15px 20px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-        <div class="logo-container" style="text-align: center; margin-bottom: 15px;">
-            <h1 style="margin: 0; font-size: 32px; color: white;"> Bella Make</h1>
-            <p style="margin: 0; font-size: 14px; color: white;">Realce a sua beleza</p>
+
+    <div id="tela-loading">
+        <div class="ring-light"></div>
+        <div class="texto-loading">Preparando o seu Glow... ✨</div>
+    </div>
+
+    <header>
+        <div class="header-top">
+            <button class="menu-btn" onclick="abrirMenuLateral()">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="logo-container">
+                <h1>Bella Make</h1>
+            </div>
+            <button class="carrinho-btn" onclick="abrirModalCarrinho()">
+                <i class="fas fa-shopping-bag"></i>
+                <span class="badge" id="contador-carrinho">0</span>
+            </button>
         </div>
         
-        <div style="display: flex; align-items: center; background: white; border-radius: 25px; padding: 5px 20px; width: 100%; max-width: 600px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-            <input type="text" id="searchInput" placeholder="Procurar produto..." onkeyup="filtrarNaTela()" style="border: none; outline: none; flex: 1; padding: 8px; font-size: 16px;">
-            <i class="fas fa-search" style="color: #d63384; font-size: 18px; margin-right: 10px;"></i>
-            
-            <div style="height: 30px; width: 1px; background-color: #ccc; margin: 0 15px;"></div>
-            
-            <button class="carrinho-btn" onclick="abrirModalCarrinho()" style="background: none; border: none; color: #d63384; font-size: 24px; cursor: pointer; position: relative;">
-                <i class="fas fa-shopping-cart"></i>
-                <span class="badge" id="contador-carrinho" style="background: #ffc107; color: black; border-radius: 50%; padding: 2px 6px; font-size: 12px; position: absolute; top: -8px; right: -12px; font-weight: bold;">0</span>
-            </button>
+        <div class="busca-container">
+            <input type="text" id="searchInput" placeholder="Procurar batom, base, rímel..." onkeyup="filtrarNaTela()">
+            <i class="fas fa-search"></i>
         </div>
     </header>
 
-    <nav class="categories">
-        <button class="cat-btn active" onclick="filtrarCategoria('Todos')">Todos</button>
-        <button class="cat-btn" style="background-color: #ffc107; color: black; font-weight: bold;" onclick="filtrarCategoria('Promoções')"><i class="fas fa-tag"></i> Promoções</button>
-        <button class="cat-btn" onclick="filtrarCategoria('Rosto')">Rosto</button>
-        <button class="cat-btn" onclick="filtrarCategoria('Olhos')">Olhos</button>
-        <button class="cat-btn" onclick="filtrarCategoria('Boca')">Boca</button>
-        <button class="cat-btn" onclick="filtrarCategoria('Sobrancelha')">Sobrancelha</button>
-        <button class="cat-btn" onclick="filtrarCategoria('Acessórios')">Acessórios</button>
-    </nav>
+    <div class="categories-wrapper">
+        <nav class="categories" id="menu-categorias">
+            <button class="cat-btn active" onclick="acaoMenu('Todos', this)"><i class="fas fa-th-large"></i> Todos</button>
+            <button class="cat-btn promo" onclick="acaoMenu('Promoções', this)"><i class="fas fa-tag"></i> Promoções</button>
+            <button class="cat-btn" onclick="acaoMenu('Rosto', this)"><i class="fas fa-smile-beam"></i> Rosto</button>
+            <button class="cat-btn" onclick="acaoMenu('Olhos', this)"><i class="fas fa-eye"></i> Olhos</button>
+            <button class="cat-btn" onclick="acaoMenu('Boca', this)"><i class="fas fa-kiss-wink-heart"></i> Boca</button>
+            <button class="cat-btn" onclick="acaoMenu('Sobrancelha', this)"><i class="fas fa-magic"></i> Sobrancelhas</button>
+            <button class="cat-btn" onclick="acaoMenu('Acessórios', this)"><i class="fas fa-gem"></i> Acessórios</button>
+        </nav>
+    </div>
 
     <main>
         <div class="product-grid" id="productGrid">
-            <p style="text-align: center; grid-column: 1/-1;">A carregar produtos...</p>
-        </div>
+            </div>
     </main>
 
     <div id="modal-produto" class="modal">
         <div class="modal-conteudo">
             <span class="fechar" onclick="fecharModal('modal-produto')">&times;</span>
-            <img id="detalhe-imagem" src="" style="width: 100%; height: 250px; object-fit: cover; border-radius: 8px;">
-            <h2 id="detalhe-nome" style="color: #d63384; margin-bottom: 5px;"></h2>
-            <p id="detalhe-categoria" style="color: #666; margin-top: 0;"></p>
+            <img id="detalhe-imagem" src="" style="width: 100%; height: 250px; object-fit: cover; border-radius: 10px;">
+            <h2 id="detalhe-nome" style="color: var(--rosa-forte); margin: 15px 0 5px; font-size: 22px;"></h2>
+            <div id="detalhe-preco" style="margin: 15px 0;"></div>
             
-            <div id="detalhe-preco"></div>
+            <p style="color: #10b981; font-size: 13px; margin-top: 10px; background: #d1fae5; display: inline-block; padding: 4px 10px; border-radius: 15px;">
+                <i class="fas fa-box-open"></i> Estoque: <b id="detalhe-estoque"></b>
+            </p>
             
-            <p style="color: #28a745; font-size: 14px; margin-top: 10px;">Estoque disponível: <b id="detalhe-estoque"></b></p>
-            
-            <div id="area-cores" style="display: none;">
-                <label>Escolha a Cor:</label>
-                <select id="detalhe-cor"></select>
+            <div id="area-cores" style="display: none; margin-top: 15px;">
+                <label style="font-weight: bold; font-size: 13px; color: #555;">Tonalidade/Cor:</label>
+                <select id="detalhe-cor" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; margin-top: 5px;"></select>
             </div>
             
-            <label>Quantidade:</label>
-            <input type="number" id="detalhe-qtd" value="1" min="1">
-            
-            <button class="btn-rosa" onclick="adicionarAoCarrinho()">Adicionar ao Carrinho</button>
+            <div style="margin-top: 15px;">
+                <label style="font-weight: bold; font-size: 13px; color: #555;">Quantidade:</label>
+                <input type="number" id="detalhe-qtd" value="1" min="1" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; margin-top: 5px;">
+            </div>
+            <button class="btn-rosa" onclick="adicionarAoCarrinho()" style="margin-top: 15px;"><i class="fas fa-cart-plus"></i> Adicionar à Sacola</button>
         </div>
     </div>
 
-    <div id="modal-carrinho" class="modal">
-        <div class="modal-conteudo">
-            <span class="fechar" onclick="fecharModal('modal-carrinho')">&times;</span>
-            <h2 style="color: #d63384;"><i class="fas fa-shopping-cart"></i> Seu Carrinho</h2>
-            
-            <div id="lista-carrinho"></div>
-            
-            <hr>
-            <label>Selecione a Cidade (Frete/Retirada):</label>
-            <select id="select-frete" onchange="calcularTotal()"></select>
-            
-            <h3 style="text-align: right; color: #333;">Subtotal: R$ <span id="carrinho-subtotal">0.00</span></h3>
-            <h3 style="text-align: right; color: #d63384;">Total Final: R$ <span id="carrinho-total">0.00</span></h3>
-            
-            <button class="btn-rosa" onclick="finalizarCompra()">
-                <i class="fab fa-whatsapp"></i> Finalizar Pedido
+    <div class="carrinho-overlay" id="menu-fundo" onclick="fecharMenuLateral()"></div>
+    <div class="menu-lateral" id="menu-navegacao">
+        <div class="menu-header">
+            <h2>Olá, Maravilhosa! ✨</h2>
+            <button class="fechar-menu" onclick="fecharMenuLateral()">&times;</button>
+        </div>
+        <div class="menu-links">
+            <a href="#" onclick="fecharMenuLateral();"><i class="fas fa-home"></i> Início</a>
+            <a href="#" onclick="fecharMenuLateral(); abrirModalCarrinho();"><i class="fas fa-shopping-bag"></i> Minha Sacola</a>
+            <a href="https://wa.me/558781790842" target="_blank"><i class="fab fa-whatsapp"></i> Falar com Atendente</a>
+        </div>
+    </div>
+
+    <div class="carrinho-overlay" id="carrinho-fundo" onclick="fecharModalCarrinho()"></div>
+    <div class="carrinho-lateral" id="carrinho-menu">
+        <div class="carrinho-header">
+            <h2><i class="fas fa-shopping-bag"></i> Sua Sacola</h2>
+            <button class="fechar-carrinho" onclick="fecharModalCarrinho()">&times;</button>
+        </div>
+        <div class="carrinho-body" id="lista-carrinho-conteudo">
+        </div>
+        <div class="carrinho-footer">
+            <label style="font-size: 13px; font-weight: bold; color:#555;">Entrega / Retirada:</label>
+            <select id="select-frete-seguro" onchange="calcularTotal()"></select>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 5px; color: #666;">
+                <span>Subtotal:</span><span>R$ <span id="carrinho-subtotal">0.00</span></span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 20px; font-weight: bold; color: var(--rosa-forte); margin-bottom: 15px;">
+                <span>Total Final:</span><span>R$ <span id="carrinho-total">0.00</span></span>
+            </div>
+            <button class="btn-rosa" onclick="finalizarCompra()" style="margin-top: 0; background-color: #25D366;">
+                <i class="fab fa-whatsapp" style="font-size: 18px; margin-right: 5px;"></i> Finalizar Pedido
             </button>
         </div>
     </div>
 
     <footer>
-        <p>&copy; 2026 Bella Make. Desenvolvido por Breno Rezende.</p>
+        <p>&copy; 2026 Bella Make. Site desenvolvido por Breno Rezende</a>.</p>
     </footer>
 
     <script src="script.js"></script>
